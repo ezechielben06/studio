@@ -13,7 +13,9 @@ import {
   Check,
   Terminal,
   ArrowRight,
-  Code
+  Code,
+  FileCode,
+  Download
 } from "lucide-react";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatInput } from "@/components/chat-input";
@@ -34,6 +36,7 @@ import { collection, query, orderBy, serverTimestamp, doc } from "firebase/fires
 import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const { auth, firestore, user } = useFirebase();
@@ -278,62 +281,68 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Code Artifact Panel */}
+        {/* Code Artifact Panel - Refined Light/Modern Theme */}
         <Sheet open={!!artifactCode} onOpenChange={(open) => !open && setArtifactCode(null)}>
-          <SheetContent side="right" className="w-full sm:max-w-[85%] lg:max-w-[65%] p-0 border-l border-border/50 shadow-2xl">
-            <div className="flex flex-col h-full bg-[#080808] text-white overflow-hidden">
-              <SheetHeader className="p-5 border-b border-white/5 flex flex-row items-center justify-between space-y-0 bg-[#0c0c0c]">
+          <SheetContent side="right" className="w-full sm:max-w-[85%] lg:max-w-[65%] p-0 border-l border-border shadow-2xl">
+            <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
+              <SheetHeader className="p-5 border-b border-border flex flex-row items-center justify-between space-y-0 bg-muted/30">
                 <div className="flex items-center gap-4">
                   <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <Terminal className="size-5 text-primary" />
+                    <FileCode className="size-5 text-primary" />
                   </div>
                   <div>
-                    <SheetTitle className="text-white text-base font-bold tracking-tight">Artéfact de Code</SheetTitle>
+                    <SheetTitle className="text-foreground text-base font-bold tracking-tight">Artéfact de Code</SheetTitle>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <Badge className="text-[9px] bg-white/10 hover:bg-white/20 text-white/70 border-none px-1.5 h-4 uppercase font-bold tracking-widest">
+                      <Badge variant="outline" className="text-[9px] bg-background text-muted-foreground border-border px-1.5 h-4 uppercase font-bold tracking-widest">
                         {artifactCode?.lang || "source"}
                       </Badge>
-                      <span className="text-[10px] text-white/30 font-medium">Lecture seule</span>
+                      <span className="text-[10px] text-muted-foreground/60 font-medium">Lecture seule</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button 
-                    variant="ghost" 
+                    variant="outline" 
                     size="sm" 
                     onClick={copyToClipboard}
-                    className="h-9 px-4 text-xs bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl transition-all"
+                    className="h-9 px-4 text-xs bg-background hover:bg-accent border-border rounded-xl transition-all font-semibold"
                   >
-                    {isCopied ? <Check className="size-3.5 mr-2 text-green-400" /> : <Copy className="size-3.5 mr-2" />}
+                    {isCopied ? <Check className="size-3.5 mr-2 text-green-600" /> : <Copy className="size-3.5 mr-2" />}
                     {isCopied ? "Copié" : "Copier"}
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     onClick={() => setArtifactCode(null)}
-                    className="h-9 w-9 text-white/40 hover:text-white rounded-xl hover:bg-white/5"
+                    className="h-9 w-9 text-muted-foreground hover:text-foreground rounded-xl hover:bg-accent"
                   >
                     <X className="size-5" />
                   </Button>
                 </div>
               </SheetHeader>
               
-              <ScrollArea className="flex-1 font-mono text-sm leading-relaxed p-8 bg-black/40">
-                <pre className="selection:bg-primary/40 selection:text-white">
-                  <code className="text-[#e0e0e0] block whitespace-pre">
+              <ScrollArea className="flex-1 font-mono text-[13px] leading-relaxed p-8 bg-card/20">
+                <pre className="selection:bg-primary/20 selection:text-foreground">
+                  <code className="text-foreground/90 block whitespace-pre">
                     {artifactCode?.code}
                   </code>
                 </pre>
               </ScrollArea>
               
-              <div className="p-4 border-t border-white/5 bg-[#0c0c0c] flex items-center justify-between">
+              <div className="p-4 border-t border-border bg-muted/20 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="size-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-[10px] text-white/40 uppercase font-bold tracking-tighter">Prêt pour déploiement</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Code validé par l'IA</span>
                 </div>
-                <Button variant="outline" size="sm" className="h-8 text-[10px] uppercase font-black tracking-widest bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-lg">
-                  Télécharger .zip
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" className="h-8 text-[10px] uppercase font-black tracking-widest text-muted-foreground hover:text-foreground rounded-lg">
+                    Aperçu
+                  </Button>
+                  <Button variant="default" size="sm" className="h-8 text-[10px] uppercase font-black tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg">
+                    <Download className="size-3 mr-2" />
+                    Exporter
+                  </Button>
+                </div>
               </div>
             </div>
           </SheetContent>
