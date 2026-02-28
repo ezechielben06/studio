@@ -5,7 +5,6 @@ import {
   Sparkles, 
   Settings2, 
   Plus,
-  ArrowRight,
   Code,
   Search,
   MessageSquare
@@ -147,7 +146,7 @@ export default function Home() {
           onSelectConversation={setCurrentConversationId} 
           onNewChat={() => setCurrentConversationId(null)}
         />
-        <SidebarInset className="flex flex-col h-svh overflow-hidden relative">
+        <SidebarInset className="flex flex-col h-svh overflow-hidden relative transition-all duration-300 ease-in-out">
           <header className="flex items-center justify-between px-6 py-4 glass-header z-30 shrink-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground h-9 w-9 rounded-lg" />

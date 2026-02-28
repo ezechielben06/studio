@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Copy, Check, Sparkles, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from 'react-markdown';
@@ -14,10 +13,9 @@ interface ChatMessageProps {
   role: "user" | "ai";
   content: string;
   timestamp: Date;
-  onViewCode?: (code: string, language: string) => void;
 }
 
-export function ChatMessage({ role, content, timestamp, onViewCode }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp }: ChatMessageProps) {
   const isUser = role === "user";
   const { toast } = useToast();
   const [copied, setCopied] = React.useState(false);
