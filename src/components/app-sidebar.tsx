@@ -12,7 +12,8 @@ import {
   Sparkles,
   MoreHorizontal,
   Trash2,
-  Share2
+  Share2,
+  Edit3
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,12 +35,17 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit } from "firebase/firestore";
+import { 
+  useFirebase, 
+  useCollection, 
+  useMemoFirebase,
+  deleteDocumentNonBlocking
+} from "@/firebase";
+import { collection, query, orderBy, limit, doc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { format, isToday, isYesterday, isAfter, subDays } from "date-fns";
-import { fr } from "date-fns/locale";
+import { subDays, isToday, isYesterday, isAfter } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 interface AppSidebarProps {
   currentConversationId: string | null;
@@ -49,6 +55,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ currentConversationId, onSelectConversation, onNewChat }: AppSidebarProps) {
   const { firestore, user } = useFirebase();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const conversationsQuery = useMemoFirebase(() => {
@@ -65,6 +72,31 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
   const filteredConversations = (conversationsData || []).filter(c => 
     c.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleDeleteConversation = (e: React.MouseEvent, conversationId: string) => {
+    e.stopPropagation();
+    if (!firestore || !user) return;
+
+    const convRef = doc(firestore, "users", user.uid, "conversations", conversationId);
+    deleteDocumentNonBlocking(convRef);
+    
+    if (currentConversationId === conversationId) {
+      onNewChat();
+    }
+
+    toast({
+      title: "Conversation supprimée",
+      description: "La discussion a été retirée de votre historique.",
+    });
+  };
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast({
+      title: "Lien de partage copié",
+      description: "Le lien vers cette conversation est prêt à être envoyé.",
+    });
+  };
 
   // Grouping logic
   const groupedConversations = React.useMemo(() => {
@@ -166,21 +198,29 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                         )} />
                         <span className="truncate text-[13px] leading-none">{conv.title}</span>
                       </SidebarMenuButton>
+                      
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction className="opacity-0 group-hover/item:opacity-100 transition-opacity">
+                          <SidebarMenuAction className="opacity-0 group-hover/item:opacity-100 transition-opacity bg-transparent hover:bg-accent/60">
                             <MoreHorizontal className="size-3.5" />
                           </SidebarMenuAction>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-48 rounded-xl p-1.5 shadow-xl border-border/40">
-                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer">
+                        <DropdownMenuContent align="start" className="w-48 rounded-xl p-1.5 shadow-xl border-border/40 backdrop-blur-xl bg-background/95">
+                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={handleShare}>
                             <Share2 className="size-3.5 opacity-60" />
-                            <span className="text-xs font-medium">Partager</span>
+                            <span className="text-xs font-semibold">Partager</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer">
+                            <Edit3 className="size-3.5 opacity-60" />
+                            <span className="text-xs font-semibold">Renommer</span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="opacity-50" />
-                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5">
+                          <DropdownMenuItem 
+                            className="gap-2 rounded-lg cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5"
+                            onClick={(e) => handleDeleteConversation(e, conv.id)}
+                          >
                             <Trash2 className="size-3.5" />
-                            <span className="text-xs font-medium">Supprimer</span>
+                            <span className="text-xs font-semibold">Supprimer</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
