@@ -1,8 +1,7 @@
-
 "use client";
 
 import * as React from "react";
-import { SendHorizontal, Paperclip, Mic, Globe, X } from "lucide-react";
+import { SendHorizontal, Paperclip, Globe, X, Command } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -45,26 +44,26 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {files.length > 0 && (
-        <div className="flex flex-wrap gap-2 px-2 animate-in fade-in slide-in-from-bottom-2">
+        <div className="flex flex-wrap gap-2 px-1">
           {files.map((file, i) => (
-            <Badge key={i} variant="secondary" className="gap-1 pl-2 pr-1 py-1 rounded-lg border border-border/50">
-              <span className="text-[10px] max-w-[120px] truncate">{file.name}</span>
+            <Badge key={i} variant="secondary" className="gap-2 pl-2 pr-1 py-1 rounded-lg bg-muted border-border">
+              <span className="text-[10px] max-w-[150px] truncate font-medium">{file.name}</span>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-4 w-4 hover:bg-destructive/10 hover:text-destructive"
+                className="h-4 w-4 rounded-full hover:bg-destructive/10"
                 onClick={() => removeFile(i)}
               >
-                <X className="size-2" />
+                <X className="size-2.5" />
               </Button>
             </Badge>
           ))}
         </div>
       )}
       
-      <div className="relative group bg-card border border-border/60 rounded-[24px] shadow-lg shadow-black/5 hover:border-primary/30 transition-all p-1.5 focus-within:ring-2 focus-within:ring-primary/20">
+      <div className="relative group bg-card border border-border rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none hover:border-border/80 transition-all p-2 focus-within:ring-2 focus-within:ring-primary/5">
         <input 
           type="file" 
           multiple 
@@ -73,44 +72,50 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           onChange={handleFileChange}
         />
         
-        <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border/30">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/5"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip className="size-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/5">
-            <Globe className="size-3.5" />
-          </Button>
-          <div className="h-3 w-px bg-border/50 mx-1" />
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider ml-1">Assistant Pro</span>
-        </div>
+        <Textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Posez n'importe quelle question..."
+          className="min-h-[60px] max-h-[250px] bg-transparent border-none resize-none px-4 py-3 rounded-xl focus-visible:ring-0 text-[15px] placeholder:text-muted-foreground/60 leading-relaxed"
+          disabled={disabled}
+        />
         
-        <div className="flex items-end gap-2 p-1.5">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Écrivez votre message ici..."
-            className="min-h-[44px] max-h-[200px] bg-transparent border-none resize-none px-3 py-3 rounded-xl focus-visible:ring-0 text-sm placeholder:text-muted-foreground/50 leading-relaxed"
-            disabled={disabled}
-          />
-          <div className="flex flex-col gap-1 pr-1 pb-1">
+        <div className="flex items-center justify-between px-3 pb-2 pt-1">
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Paperclip className="size-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted">
+              <Globe className="size-4" />
+            </Button>
+            <div className="h-4 w-px bg-border mx-2" />
+            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest hidden sm:block">
+              Claude Style Agent
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-muted-foreground/40 font-medium hidden sm:flex items-center gap-1">
+              <Command className="size-2.5" /> + Entrée pour envoyer
+            </span>
             <Button
               onClick={handleSend}
               disabled={(!input.trim() && files.length === 0) || disabled}
               size="icon"
               className={cn(
-                "h-10 w-10 rounded-full transition-all active:scale-95 shrink-0",
+                "h-8 w-8 rounded-lg transition-all",
                 (input.trim() || files.length > 0)
-                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90" 
-                  : "bg-accent text-muted-foreground opacity-50"
+                  ? "bg-primary text-primary-foreground shadow-sm" 
+                  : "bg-muted text-muted-foreground opacity-40"
               )}
             >
-              <SendHorizontal className="h-5 w-5" />
+              <SendHorizontal className="h-4 w-4" />
             </Button>
           </div>
         </div>
