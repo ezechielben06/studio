@@ -26,7 +26,12 @@ const AIChatResponseSchema = z
 export type AIChatResponse = z.infer<typeof AIChatResponseSchema>;
 
 export async function chatWithAI(input: UserChatMessage): Promise<AIChatResponse> {
-  return chatWithAIFlow(input);
+  try {
+    return await chatWithAIFlow(input);
+  } catch (error: any) {
+    console.error('Genkit Flow Error:', error);
+    throw new Error(error.message || 'Une erreur de connexion est survenue avec l\'IA.');
+  }
 }
 
 const chatPrompt = ai.definePrompt({
@@ -45,10 +50,19 @@ const chatWithAIFlow = ai.defineFlow(
     outputSchema: AIChatResponseSchema,
   },
   async input => {
-    // Call the prompt with an optional model override from the input
+    // Vérifier si la clé API est présente (côté serveur uniquement)
+    if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
+      throw new Error('La clé API Google AI est manquante dans les variables d\'environnement.');
+    }
+
     const {output} = await chatPrompt(input, {
       model: input.model as any,
     });
-    return output!;
+    
+    if (!output) {
+      throw new Error('L\'IA n\'a pas généré de réponse.');
+    }
+    
+    return output;
   }
 );

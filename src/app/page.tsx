@@ -121,11 +121,11 @@ export default function Home() {
         const convRef = doc(firestore, "users", user.uid, "conversations", convId);
         setDocumentNonBlocking(convRef, { updatedAt: serverTimestamp() }, { merge: true });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Désolé, une erreur est survenue",
-        description: "L'IA n'a pas pu répondre. Vérifiez votre connexion.",
+        title: "Erreur de communication",
+        description: error.message || "Impossible de joindre l'IA. Vérifiez vos variables d'environnement sur Netlify.",
       });
     } finally {
       setIsLoading(false);
