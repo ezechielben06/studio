@@ -4,86 +4,84 @@
 
 @layer base {
   :root {
-    /* Palette Claude : Tons chauds et organiques */
-    /* Fond "Papier" */
-    --background: 40 12% 97%;
-    --foreground: 240 10% 10%;
+    /* Palette Libre Chat : Tons clairs et pro */
+    --background: 210 20% 98%;
+    --foreground: 224 71% 4%;
     
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
+    --card-foreground: 224 71% 4%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
+    --popover-foreground: 224 71% 4%;
     
-    /* Couleur d'accentuation : Terracotta / Sable chaud */
-    --primary: 24 54% 45%;
-    --primary-foreground: 40 12% 98%;
+    /* Nouvelle couleur d'accentuation : Violet Indigo Vibrant */
+    --primary: 250 84% 54%;
+    --primary-foreground: 210 20% 98%;
     
-    --secondary: 40 12% 92%;
-    --secondary-foreground: 240 10% 10%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 224 71% 4%;
     
-    --muted: 40 12% 90%;
-    --muted-foreground: 240 5% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 8% 46%;
     
-    --accent: 24 54% 95%;
-    --accent-foreground: 24 54% 45%;
+    --accent: 250 84% 96%;
+    --accent-foreground: 250 84% 54%;
     
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
     
-    --border: 40 12% 85%;
-    --input: 40 12% 85%;
-    --ring: 24 54% 45%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 250 84% 54%;
     --radius: 0.75rem;
 
-    --sidebar-background: 40 12% 95%;
-    --sidebar-foreground: 240 5% 26%;
-    --sidebar-primary: 24 54% 45%;
+    --sidebar-background: 210 20% 96%;
+    --sidebar-foreground: 224 71% 10%;
+    --sidebar-primary: 250 84% 54%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 40 12% 90%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 40 12% 88%;
-    --sidebar-ring: 24 54% 45%;
+    --sidebar-accent: 220 14% 92%;
+    --sidebar-accent-foreground: 250 84% 54%;
+    --sidebar-border: 220 13% 88%;
+    --sidebar-ring: 250 84% 54%;
   }
 
   .dark {
-    /* Mode sombre adouci : Anthracite chaud / Charcoal */
-    --background: 240 6% 10%;
-    --foreground: 40 10% 96%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
     
-    --card: 240 6% 12%;
-    --card-foreground: 40 10% 96%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
     
-    --popover: 240 6% 12%;
-    --popover-foreground: 40 10% 96%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 213 31% 91%;
     
-    --primary: 24 54% 65%;
-    --primary-foreground: 240 6% 5%;
+    --primary: 250 84% 65%;
+    --primary-foreground: 224 71% 4%;
     
-    --secondary: 240 5% 18%;
-    --secondary-foreground: 40 10% 96%;
+    --secondary: 215 27% 12%;
+    --secondary-foreground: 213 31% 91%;
     
-    --muted: 240 5% 15%;
-    --muted-foreground: 240 5% 70%;
+    --muted: 215 27% 12%;
+    --muted-foreground: 215 20% 65%;
     
-    --accent: 24 54% 20%;
-    --accent-foreground: 24 54% 75%;
+    --accent: 250 84% 20%;
+    --accent-foreground: 250 84% 75%;
     
-    --destructive: 0 62.8% 40%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 213 31% 91%;
     
-    --border: 240 5% 20%;
-    --input: 240 5% 20%;
-    --ring: 24 54% 65%;
+    --border: 215 27% 12%;
+    --input: 215 27% 12%;
+    --ring: 250 84% 65%;
 
-    --sidebar-background: 240 6% 8%;
-    --sidebar-foreground: 240 5% 92%;
-    --sidebar-primary: 24 54% 65%;
-    --sidebar-primary-foreground: 240 6% 5%;
-    --sidebar-accent: 240 5% 15%;
-    --sidebar-accent-foreground: 40 10% 96%;
-    --sidebar-border: 240 5% 12%;
-    --sidebar-ring: 24 54% 65%;
+    --sidebar-background: 224 71% 2%;
+    --sidebar-foreground: 213 31% 85%;
+    --sidebar-primary: 250 84% 65%;
+    --sidebar-primary-foreground: 224 71% 4%;
+    --sidebar-accent: 215 27% 10%;
+    --sidebar-accent-foreground: 250 84% 70%;
+    --sidebar-border: 215 27% 8%;
+    --sidebar-ring: 250 84% 65%;
   }
 }
 
@@ -96,7 +94,6 @@
   }
 }
 
-/* Style Claude pour le contenu prose */
 .prose-claude {
   @apply text-[16px] leading-[1.7] font-normal;
 }
@@ -110,12 +107,12 @@
 .prose-claude li { @apply pl-1; }
 .prose-claude strong { @apply font-semibold text-foreground; }
 .prose-claude blockquote { @apply border-l-4 border-primary/30 pl-5 italic my-6 text-muted-foreground; }
-.prose-claude code { @apply bg-primary/5 px-1.5 py-0.5 rounded text-[0.9em] font-mono text-primary; }
+.prose-claude code { @apply bg-primary/10 px-1.5 py-0.5 rounded text-[0.9em] font-mono text-primary; }
 
 .glass-header {
   @apply bg-background/80 backdrop-blur-md border-b border-border/50;
 }
 
 .chat-bubble-user {
-  @apply bg-muted/30 text-foreground rounded-2xl px-5 py-3 shadow-none border border-border/30;
+  @apply bg-primary/5 text-foreground rounded-2xl px-5 py-3 shadow-none border border-primary/10;
 }

@@ -152,7 +152,7 @@ export default function Home() {
               <SidebarTrigger className="text-muted-foreground hover:text-foreground h-9 w-9 rounded-lg" />
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-sm font-bold tracking-tight">Claude AI Style</h1>
+                  <h1 className="text-sm font-bold tracking-tight">Libre Chat</h1>
                   <Badge variant="outline" className="text-[9px] font-bold px-1.5 h-4 border-primary/20 bg-primary/5 text-primary">PLUS</Badge>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export default function Home() {
                 variant="default"
                 size="sm"
                 onClick={() => setCurrentConversationId(null)}
-                className="rounded-lg h-9 text-xs font-bold px-4"
+                className="rounded-xl h-9 text-xs font-bold px-4"
               >
                 <Plus className="size-3.5 mr-2" />
                 Nouveau
@@ -188,7 +188,7 @@ export default function Home() {
                     </div>
                     <h2 className="text-3xl font-bold tracking-tight mb-4">En quoi puis-je vous aider ?</h2>
                     <p className="text-muted-foreground text-[15px] mb-12 max-w-lg leading-relaxed">
-                      Que vous souhaitiez coder, analyser un texte ou simplement discuter, je suis là pour vous accompagner.
+                      Que vous souhaitiez coder, analyser un texte ou simplement discuter, Libre Chat est là pour vous accompagner.
                     </p>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
@@ -241,7 +241,7 @@ export default function Home() {
               <div className="max-w-3xl mx-auto w-full">
                 <ChatInput onSend={handleSendMessage} disabled={isLoading} />
                 <p className="text-[10px] text-center text-muted-foreground/40 font-medium mt-4 uppercase tracking-[0.15em]">
-                  Claude peut commettre des erreurs. Vérifiez les faits importants.
+                  Libre Chat peut commettre des erreurs. Vérifiez les faits importants.
                 </p>
               </div>
             </div>

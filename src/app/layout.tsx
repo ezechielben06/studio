@@ -5,8 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeHandler } from '@/components/theme-handler';
 
 export const metadata: Metadata = {
-  title: 'LibreChat Pro',
-  description: 'Assistant IA professionnel moderne de nouvelle génération',
+  title: 'Libre Chat',
+  description: 'Assistant IA professionnel moderne et ouvert',
 };
 
 export default function RootLayout({

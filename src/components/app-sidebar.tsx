@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -16,8 +15,6 @@ import {
   Share2,
   Edit3,
   Archive,
-  Check,
-  X
 } from "lucide-react";
 import {
   Sidebar,
@@ -157,7 +154,6 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
     });
   };
 
-  // Grouping logic
   const groupedConversations = React.useMemo(() => {
     const groups: { title: string; items: any[] }[] = [
       { title: "Aujourd'hui", items: [] },
@@ -190,7 +186,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
             <div className="size-8 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
               <Sparkles className="size-5 text-white" />
             </div>
-            <span className="font-bold text-sm tracking-tight truncate group-data-[state=collapsed]:hidden animate-in fade-in slide-in-from-left-2 duration-300">LibreChat Pro</span>
+            <span className="font-bold text-sm tracking-tight truncate group-data-[state=collapsed]:hidden animate-in fade-in slide-in-from-left-2 duration-300">Libre Chat</span>
           </div>
           
           <SidebarMenu>
@@ -245,7 +241,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                           className={cn(
                             "rounded-xl transition-all duration-200 h-10 px-3",
                             currentConversationId === conv.id 
-                              ? "bg-accent/80 text-foreground font-semibold" 
+                              ? "bg-accent text-foreground font-semibold" 
                               : "hover:bg-accent/40 text-muted-foreground hover:text-foreground"
                           )}
                           onClick={() => onSelectConversation(conv.id)}
@@ -319,10 +315,10 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                       </div>
                       <div className="flex flex-col items-start overflow-hidden group-data-[state=collapsed]:hidden animate-in fade-in duration-300">
                         <span className="text-sm font-bold truncate w-full text-left">
-                          {user?.isAnonymous ? "Anonyme Pro" : user?.displayName || "Utilisateur"}
+                          {user?.isAnonymous ? "Utilisateur" : user?.displayName || "Utilisateur"}
                         </span>
                         <span className="text-[10px] text-muted-foreground/60 font-black uppercase tracking-widest truncate w-full text-left">
-                          Abonné Plus
+                          Libre Chat Plus
                         </span>
                       </div>
                       <ChevronUp className="size-4 ml-auto opacity-30 group-data-[state=collapsed]:hidden animate-in fade-in duration-300" />
