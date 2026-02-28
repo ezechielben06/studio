@@ -26,19 +26,20 @@ export function ChatMessage({ role, content, timestamp, onViewCode }: ChatMessag
   const userAvatar = PlaceHolderImages.find((img) => img.id === "user-avatar")?.imageUrl;
   const aiAvatar = PlaceHolderImages.find((img) => img.id === "ai-avatar")?.imageUrl;
 
-  // Parser to identify code blocks for the "Artifact" button
+  // Safe parsing for code blocks
   const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-  const matches = Array.from(content.matchAll(codeBlockRegex));
+  const matches = content ? Array.from(content.matchAll(codeBlockRegex)) : [];
   const hasCode = matches.length > 0;
 
   const handleViewCode = () => {
-    if (hasCode && onViewCode) {
-      const [fullMatch, lang, code] = matches[0];
+    if (hasCode && onViewCode && matches[0]) {
+      const [_, lang, code] = matches[0];
       onViewCode(code.trim(), lang || "plaintext");
     }
   };
 
   const handleCopy = () => {
+    if (!content) return;
     navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -47,6 +48,8 @@ export function ChatMessage({ role, content, timestamp, onViewCode }: ChatMessag
       description: "Le message a été copié dans le presse-papier.",
     });
   };
+
+  if (!content && role === "ai") return null;
 
   return (
     <div

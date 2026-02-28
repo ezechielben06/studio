@@ -22,7 +22,6 @@ import { chatWithAI } from "@/ai/flows/user-can-chat-with-ai-flow";
 import { useToast } from "@/hooks/use-toast";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Input } from "@/components/ui/input";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { 
   useFirebase, 
@@ -70,7 +69,7 @@ export default function Home() {
   };
 
   const handleSendMessage = async (content: string, files?: File[]) => {
-    if (!user || !firestore) return;
+    if (!user || !firestore || !content.trim()) return;
 
     let convId = currentConversationId;
 
@@ -106,29 +105,31 @@ export default function Home() {
     try {
       const response = await chatWithAI({ message: content });
       
-      const aiMessageId = (Date.now() + 1).toString();
-      const aiMsgRef = doc(firestore, "users", user.uid, "conversations", convId, "messages", aiMessageId);
+      if (response && response.response) {
+        const aiMessageId = (Date.now() + 1).toString();
+        const aiMsgRef = doc(firestore, "users", user.uid, "conversations", convId, "messages", aiMessageId);
 
-      setDocumentNonBlocking(aiMsgRef, {
-        id: aiMessageId,
-        conversationId: convId,
-        content: response.response,
-        senderType: "ai",
-        ownerId: user.uid,
-        timestamp: serverTimestamp(),
-      }, { merge: true });
+        setDocumentNonBlocking(aiMsgRef, {
+          id: aiMessageId,
+          conversationId: convId,
+          content: response.response,
+          senderType: "ai",
+          ownerId: user.uid,
+          timestamp: serverTimestamp(),
+        }, { merge: true });
 
-      // Check if response contains code to automatically suggest viewing
-      const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-      const matches = Array.from(response.response.matchAll(codeBlockRegex));
-      if (matches.length > 0) {
-        const [fullMatch, lang, code] = matches[0];
-        setArtifactCode({ code: code.trim(), lang: lang || "plaintext" });
+        // Check if response contains code to automatically suggest viewing
+        const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+        const matches = Array.from(response.response.matchAll(codeBlockRegex));
+        if (matches.length > 0) {
+          const [_, lang, code] = matches[0];
+          setArtifactCode({ code: code.trim(), lang: lang || "plaintext" });
+        }
+
+        // Update conversation timestamp
+        const convRef = doc(firestore, "users", user.uid, "conversations", convId);
+        setDocumentNonBlocking(convRef, { updatedAt: serverTimestamp() }, { merge: true });
       }
-
-      // Update conversation timestamp
-      const convRef = doc(firestore, "users", user.uid, "conversations", convId);
-      setDocumentNonBlocking(convRef, { updatedAt: serverTimestamp() }, { merge: true });
 
     } catch (error) {
       toast({
@@ -240,7 +241,7 @@ export default function Home() {
                   <ChatMessage
                     key={msg.id}
                     role={msg.senderType}
-                    content={msg.content}
+                    content={msg.content || ""}
                     timestamp={msg.timestamp?.toDate() || new Date()}
                     onViewCode={(code, lang) => setArtifactCode({ code, lang })}
                   />
@@ -306,7 +307,7 @@ export default function Home() {
               
               <ScrollArea className="flex-1 font-mono text-sm leading-relaxed p-6">
                 <pre className="selection:bg-primary/30">
-                  <code className="text-[#d1d1d1] block">
+                  <code className="text-[#d1d1d1] block whitespace-pre">
                     {artifactCode?.code}
                   </code>
                 </pre>
