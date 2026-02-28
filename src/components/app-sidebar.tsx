@@ -30,6 +30,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  SidebarMenuAction,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -86,10 +87,11 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
   const { data: conversationsData, isLoading } = useCollection(conversationsQuery);
   
   const filteredConversations = (conversationsData || [])
-    .filter(c => !c.isArchived) // Cache les archivées de la liste principale
+    .filter(c => !c.isArchived)
     .filter(c => c.title?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleDeleteConversation = (e: React.MouseEvent, conversationId: string) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!firestore || !user) return;
 
@@ -107,6 +109,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
   };
 
   const handleShare = (e: React.MouseEvent, conversationId: string) => {
+    e.preventDefault();
     e.stopPropagation();
     const url = `${window.location.origin}?chat=${conversationId}`;
     navigator.clipboard.writeText(url);
@@ -117,6 +120,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
   };
 
   const handleArchive = (e: React.MouseEvent, conversationId: string) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!firestore || !user) return;
 
@@ -134,6 +138,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
   };
 
   const openRenameDialog = (e: React.MouseEvent, conv: { id: string, title: string }) => {
+    e.preventDefault();
     e.stopPropagation();
     setEditingConv(conv);
     setNewTitle(conv.title);
@@ -233,12 +238,12 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                 <SidebarGroupContent>
                   <SidebarMenu className="gap-0.5">
                     {group.items.map((conv: any) => (
-                      <SidebarMenuItem key={conv.id} className="relative group/item">
+                      <SidebarMenuItem key={conv.id} className="group/item">
                         <SidebarMenuButton 
                           tooltip={conv.title} 
                           isActive={currentConversationId === conv.id}
                           className={cn(
-                            "rounded-xl transition-all duration-200 h-10 px-3 pr-8",
+                            "rounded-xl transition-all duration-200 h-10 px-3",
                             currentConversationId === conv.id 
                               ? "bg-accent/80 text-foreground font-semibold" 
                               : "hover:bg-accent/40 text-muted-foreground hover:text-foreground"
@@ -254,7 +259,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                           </span>
                         </SidebarMenuButton>
                         
-                        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/item:opacity-100 transition-opacity group-data-[state=collapsed]:hidden">
+                        <SidebarMenuAction showOnHover className="group-data-[state=collapsed]:hidden">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-accent/60">
@@ -284,7 +289,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </div>
+                        </SidebarMenuAction>
                       </SidebarMenuItem>
                     ))}
                   </SidebarMenu>
