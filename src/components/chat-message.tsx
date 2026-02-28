@@ -85,6 +85,10 @@ export function ChatMessage({ role, content, timestamp, onViewCode }: ChatMessag
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
                 components={{
+                  // Change p to div to avoid "div in p" hydration errors when rendering code blocks
+                  p({ children }) {
+                    return <div className="mb-4 last:mb-0">{children}</div>;
+                  },
                   code({ node, inline, className, children, ...props }: any) {
                     const match = /language-(\w+)/.exec(className || '');
                     return !inline ? (
