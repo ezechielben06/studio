@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 import { Toaster } from '@/components/ui/toaster';
+import { ThemeHandler } from '@/components/theme-handler';
 
 export const metadata: Metadata = {
   title: 'LibreChat Pro',
@@ -22,6 +23,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased overflow-hidden selection:bg-primary/20">
         <FirebaseClientProvider>
+          <ThemeHandler />
           {children}
           <Toaster />
         </FirebaseClientProvider>

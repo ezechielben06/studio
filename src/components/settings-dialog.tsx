@@ -27,7 +27,6 @@ import {
 } from "@/firebase";
 import { doc, serverTimestamp } from "firebase/firestore";
 import { 
-  Sparkles, 
   Moon, 
   Sun, 
   History, 
@@ -56,19 +55,18 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     if (!settingsRef) return;
     setDocumentNonBlocking(settingsRef, {
       id: "general",
-      // Merge current values to avoid data loss on singleton update
-      theme: settings?.theme || "light",
+      theme: settings?.theme || "system",
       llmModelPreference: settings?.llmModelPreference || "creative_model",
       autoSaveChatHistory: settings?.autoSaveChatHistory !== undefined ? settings.autoSaveChatHistory : true,
-      ...settings, // Current settings
-      [key]: value, // Updated setting
+      ...settings,
+      [key]: value,
       lastUpdatedAt: serverTimestamp(),
     }, { merge: true });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] rounded-3xl p-0 overflow-hidden border-border shadow-2xl">
+      <DialogContent className="sm:max-w-[480px] rounded-3xl p-0 overflow-hidden border-border shadow-2xl bg-background text-foreground">
         <DialogHeader className="p-6 bg-muted/20 border-b border-border">
           <div className="flex items-center gap-3 mb-1">
             <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
@@ -99,10 +97,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <SelectTrigger id="model" className="h-11 rounded-xl bg-accent/20 border-border/50">
                   <SelectValue placeholder="Choisir un modèle" />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl shadow-xl border-border">
+                <SelectContent className="rounded-2xl shadow-xl border-border bg-popover">
                   <SelectItem value="creative_model" className="rounded-lg">Gemini 2.5 Flash (Plus créatif)</SelectItem>
                   <SelectItem value="fast_model" className="rounded-lg">Gemini 1.5 Flash (Ultra rapide)</SelectItem>
-                  <SelectItem value="default" className="rounded-lg">Gemini Standard</SelectItem>
+                  <SelectItem value="default" className="rounded-lg">Gemini 1.5 Pro (Raisonnement avancé)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-[10px] text-muted-foreground font-medium px-1">Le modèle créatif est idéal pour le code et l'écriture.</p>
@@ -120,16 +118,19 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <div className="grid gap-2">
               <Label htmlFor="theme" className="text-xs font-bold uppercase tracking-tighter text-muted-foreground">Thème visuel</Label>
               <Select 
-                value={settings?.theme || "light"} 
+                value={settings?.theme || "system"} 
                 onValueChange={(v) => updateSetting("theme", v)}
               >
                 <SelectTrigger id="theme" className="h-11 rounded-xl bg-accent/20 border-border/50">
-                  <SelectValue placeholder="Choisir un thème" />
+                  <div className="flex items-center gap-2">
+                    {settings?.theme === 'dark' ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
+                    <SelectValue placeholder="Choisir un thème" />
+                  </div>
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl shadow-xl border-border">
+                <SelectContent className="rounded-2xl shadow-xl border-border bg-popover">
                   <SelectItem value="light" className="rounded-lg">Clair</SelectItem>
                   <SelectItem value="dark" className="rounded-lg">Sombre</SelectItem>
-                  <SelectItem value="system" className="rounded-lg">Système</SelectItem>
+                  <SelectItem value="system" className="rounded-lg">Système (Auto)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -137,7 +138,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
           <Separator className="bg-border/50" />
 
-          {/* Données & Vie Privée Section */}
+          {/* Données Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Database className="size-4 text-primary" />
@@ -163,7 +164,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
         <DialogFooter className="p-6 bg-muted/10 border-t border-border mt-0">
           <Button variant="outline" className="rounded-xl w-full h-11 font-bold tracking-tight bg-background hover:bg-accent border-border transition-all" onClick={() => onOpenChange(false)}>
-            Enregistrer & Fermer
+            Fermer
           </Button>
         </DialogFooter>
       </DialogContent>
