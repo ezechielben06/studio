@@ -90,7 +90,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
     .filter(c => !c.isArchived)
     .filter(c => c.title?.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const handleDeleteConversation = (e: React.MouseEvent, conversationId: string) => {
+  const handleDeleteConversation = (e: React.MouseEvent | React.KeyboardEvent, conversationId: string) => {
     e.preventDefault();
     e.stopPropagation();
     if (!firestore || !user) return;
@@ -108,7 +108,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
     });
   };
 
-  const handleShare = (e: React.MouseEvent, conversationId: string) => {
+  const handleShare = (e: React.MouseEvent | React.KeyboardEvent, conversationId: string) => {
     e.preventDefault();
     e.stopPropagation();
     const url = `${window.location.origin}?chat=${conversationId}`;
@@ -119,7 +119,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
     });
   };
 
-  const handleArchive = (e: React.MouseEvent, conversationId: string) => {
+  const handleArchive = (e: React.MouseEvent | React.KeyboardEvent, conversationId: string) => {
     e.preventDefault();
     e.stopPropagation();
     if (!firestore || !user) return;
@@ -137,7 +137,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
     });
   };
 
-  const openRenameDialog = (e: React.MouseEvent, conv: { id: string, title: string }) => {
+  const openRenameDialog = (e: React.MouseEvent | React.KeyboardEvent, conv: { id: string, title: string }) => {
     e.preventDefault();
     e.stopPropagation();
     setEditingConv(conv);
@@ -259,37 +259,36 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                           </span>
                         </SidebarMenuButton>
                         
-                        <SidebarMenuAction showOnHover className="group-data-[state=collapsed]:hidden">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-accent/60">
-                                <MoreHorizontal className="size-3.5" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 rounded-xl p-1.5 shadow-xl border-border/40 backdrop-blur-xl bg-background/95">
-                              <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={(e) => handleShare(e, conv.id)}>
-                                <Share2 className="size-3.5 opacity-60" />
-                                <span className="text-xs font-semibold">Partager</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={(e) => openRenameDialog(e, conv)}>
-                                <Edit3 className="size-3.5 opacity-60" />
-                                <span className="text-xs font-semibold">Renommer</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={(e) => handleArchive(e, conv.id)}>
-                                <Archive className="size-3.5 opacity-60" />
-                                <span className="text-xs font-semibold">Archiver</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="opacity-50" />
-                              <DropdownMenuItem 
-                                className="gap-2 rounded-lg cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5"
-                                onClick={(e) => handleDeleteConversation(e, conv.id)}
-                              >
-                                <Trash2 className="size-3.5" />
-                                <span className="text-xs font-semibold">Supprimer</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </SidebarMenuAction>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <SidebarMenuAction showOnHover className="group-data-[state=collapsed]:hidden">
+                              <MoreHorizontal className="size-3.5" />
+                              <span className="sr-only">Plus d'options</span>
+                            </SidebarMenuAction>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl p-1.5 shadow-xl border-border/40 backdrop-blur-xl bg-background/95">
+                            <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={(e) => handleShare(e, conv.id)}>
+                              <Share2 className="size-3.5 opacity-60" />
+                              <span className="text-xs font-semibold">Partager</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={(e) => openRenameDialog(e, conv)}>
+                              <Edit3 className="size-3.5 opacity-60" />
+                              <span className="text-xs font-semibold">Renommer</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={(e) => handleArchive(e, conv.id)}>
+                              <Archive className="size-3.5 opacity-60" />
+                              <span className="text-xs font-semibold">Archiver</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="opacity-50" />
+                            <DropdownMenuItem 
+                              className="gap-2 rounded-lg cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5"
+                              onClick={(e) => handleDeleteConversation(e, conv.id)}
+                            >
+                              <Trash2 className="size-3.5" />
+                              <span className="text-xs font-semibold">Supprimer</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </SidebarMenuItem>
                     ))}
                   </SidebarMenu>
