@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -130,29 +131,30 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
   }, [filteredConversations]);
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/40 bg-sidebar/50 backdrop-blur-xl">
-      <SidebarHeader className="p-4 gap-4">
+    <Sidebar collapsible="icon" className="border-r border-border/40 bg-sidebar/50 backdrop-blur-xl transition-all duration-300">
+      <SidebarHeader className="p-4 gap-4 overflow-hidden">
         <div className="flex items-center gap-3 px-2">
           <div className="size-8 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
             <Sparkles className="size-5 text-white" />
           </div>
-          <span className="font-bold text-sm tracking-tight truncate group-data-[collapsible=icon]:hidden">LibreChat Pro</span>
+          <span className="font-bold text-sm tracking-tight truncate group-data-[state=collapsed]:hidden animate-in fade-in slide-in-from-left-2 duration-300">LibreChat Pro</span>
         </div>
         
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton 
+              tooltip="Nouveau Chat"
               size="lg" 
               onClick={onNewChat}
               className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/10 transition-all rounded-xl h-11 border border-primary/20"
             >
               <Plus className="size-5 shrink-0" />
-              <span className="font-bold group-data-[collapsible=icon]:hidden">Nouveau Chat</span>
+              <span className="font-bold group-data-[state=collapsed]:hidden truncate animate-in fade-in duration-300">Nouveau Chat</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <div className="relative group-data-[collapsible=icon]:hidden">
+        <div className="relative group-data-[state=collapsed]:hidden animate-in fade-in duration-300">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/50" />
           <Input 
             placeholder="Rechercher..." 
@@ -163,7 +165,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3">
+      <SidebarContent className="px-3 overflow-x-hidden">
         {isLoading ? (
           <SidebarGroup>
             <SidebarGroupContent>
@@ -176,19 +178,19 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
           </SidebarGroup>
         ) : groupedConversations.length > 0 ? (
           groupedConversations.map((group) => (
-            <SidebarGroup key={group.title}>
-              <SidebarGroupLabel className="px-3 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/40 mt-4 mb-2">
+            <SidebarGroup key={group.title} className="group-data-[state=collapsed]:items-center">
+              <SidebarGroupLabel className="px-3 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/40 mt-4 mb-2 group-data-[state=collapsed]:hidden">
                 {group.title}
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="gap-0.5">
                   {group.items.map((conv: any) => (
-                    <SidebarMenuItem key={conv.id}>
+                    <SidebarMenuItem key={conv.id} className="relative group/item">
                       <SidebarMenuButton 
                         tooltip={conv.title} 
                         isActive={currentConversationId === conv.id}
                         className={cn(
-                          "rounded-xl transition-all duration-200 h-10 px-3 group/item relative pr-8",
+                          "rounded-xl transition-all duration-200 h-10 px-3 pr-8",
                           currentConversationId === conv.id 
                             ? "bg-accent/80 text-foreground font-semibold" 
                             : "hover:bg-accent/40 text-muted-foreground hover:text-foreground"
@@ -197,12 +199,14 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                       >
                         <MessageSquare className={cn(
                           "size-4 shrink-0 transition-colors mr-2",
-                          currentConversationId === conv.id ? "text-primary" : "opacity-40 group-hover/item:text-primary group-hover/item:opacity-100"
+                          currentConversationId === conv.id ? "text-primary" : "opacity-40"
                         )} />
-                        <span className="truncate text-[13px] leading-none">{conv.title}</span>
+                        <span className="truncate text-[13px] leading-none group-data-[state=collapsed]:hidden animate-in fade-in duration-300">
+                          {conv.title}
+                        </span>
                       </SidebarMenuButton>
                       
-                      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/item:opacity-100 transition-opacity">
+                      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/item:opacity-100 transition-opacity group-data-[state=collapsed]:hidden">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-accent/60">
@@ -240,7 +244,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
             </SidebarGroup>
           ))
         ) : (
-          <div className="px-6 py-12 text-center flex flex-col items-center gap-3">
+          <div className="px-6 py-12 text-center flex flex-col items-center gap-3 group-data-[state=collapsed]:hidden">
             <div className="size-10 rounded-full bg-accent/30 flex items-center justify-center">
               <MessageSquare className="size-5 text-muted-foreground/30" />
             </div>
@@ -251,17 +255,17 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 overflow-hidden">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton size="lg" className="rounded-2xl hover:bg-accent transition-all h-14 group border border-transparent hover:border-border/40">
+                <SidebarMenuButton size="lg" className="rounded-2xl hover:bg-accent transition-all h-14 group border border-transparent hover:border-border/40 overflow-hidden">
                   <div className="flex items-center gap-3 w-full">
                     <div className="size-9 rounded-xl bg-gradient-to-br from-primary/10 to-accent/50 flex items-center justify-center border border-border/50 overflow-hidden shrink-0">
                       <User className="size-4 text-primary" />
                     </div>
-                    <div className="flex flex-col items-start overflow-hidden group-data-[collapsible=icon]:hidden">
+                    <div className="flex flex-col items-start overflow-hidden group-data-[state=collapsed]:hidden animate-in fade-in duration-300">
                       <span className="text-sm font-bold truncate w-full text-left">
                         {user?.isAnonymous ? "Anonyme Pro" : user?.displayName || "Utilisateur"}
                       </span>
@@ -269,7 +273,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                         Abonné Plus
                       </span>
                     </div>
-                    <ChevronUp className="size-4 ml-auto opacity-30 group-data-[collapsible=icon]:hidden" />
+                    <ChevronUp className="size-4 ml-auto opacity-30 group-data-[state=collapsed]:hidden animate-in fade-in duration-300" />
                   </div>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
