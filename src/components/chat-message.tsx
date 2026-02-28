@@ -1,21 +1,36 @@
+
 "use client";
 
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Copy, ThumbsUp, RotateCcw } from "lucide-react";
+import { Copy, ThumbsUp, RotateCcw, Code2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ChatMessageProps {
   role: "user" | "ai";
   content: string;
   timestamp: Date;
+  onViewCode?: (code: string, language: string) => void;
 }
 
-export function ChatMessage({ role, content, timestamp }: ChatMessageProps) {
+export function ChatMessage({ role, content, timestamp, onViewCode }: ChatMessageProps) {
   const isUser = role === "user";
   const userAvatar = PlaceHolderImages.find((img) => img.id === "user-avatar")?.imageUrl;
   const aiAvatar = PlaceHolderImages.find((img) => img.id === "ai-avatar")?.imageUrl;
+
+  // Simple parser to find code blocks
+  const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+  const matches = Array.from(content.matchAll(codeBlockRegex));
+  const hasCode = matches.length > 0;
+
+  const handleViewCode = () => {
+    if (hasCode && onViewCode) {
+      // Pass the first code block found
+      const [fullMatch, lang, code] = matches[0];
+      onViewCode(code.trim(), lang || "plaintext");
+    }
+  };
 
   return (
     <div
@@ -45,6 +60,21 @@ export function ChatMessage({ role, content, timestamp }: ChatMessageProps) {
           <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap selection:bg-primary/20">
             {content}
           </p>
+          
+          {hasCode && !isUser && (
+            <div className="mt-4">
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={handleViewCode}
+                className="h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 font-bold text-[10px] uppercase tracking-wider"
+              >
+                <Code2 className="size-3.5 mr-2" />
+                Ouvrir l'artéfact de code
+                <ExternalLink className="size-3 ml-2 opacity-50" />
+              </Button>
+            </div>
+          )}
           
           {/* Subtle actions for AI messages */}
           {!isUser && (

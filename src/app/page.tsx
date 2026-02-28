@@ -8,7 +8,11 @@ import {
   Settings2, 
   Search,
   Zap,
-  Plus
+  Plus,
+  X,
+  Copy,
+  Check,
+  Terminal
 } from "lucide-react";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatInput } from "@/components/chat-input";
@@ -24,11 +28,11 @@ import {
   useFirebase, 
   useCollection, 
   useMemoFirebase,
-  addDocumentNonBlocking,
   setDocumentNonBlocking
 } from "@/firebase";
 import { collection, query, orderBy, serverTimestamp, doc } from "firebase/firestore";
 import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export default function Home() {
   const { auth, firestore, user } = useFirebase();
@@ -37,6 +41,9 @@ export default function Home() {
   const [currentConversationId, setCurrentConversationId] = React.useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [artifactCode, setArtifactCode] = React.useState<{ code: string, lang: string } | null>(null);
+  const [isCopied, setIsCopied] = React.useState(false);
+  
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   // Auto-login anonymously if not connected
@@ -94,23 +101,6 @@ export default function Home() {
       timestamp: serverTimestamp(),
     }, { merge: true });
 
-    // Save file metadata if any
-    if (files && files.length > 0) {
-      files.forEach(file => {
-        const fileRef = doc(collection(firestore, "users", user.uid, "conversations", convId!, "messages", messageId, "files"));
-        setDocumentNonBlocking(fileRef, {
-          id: fileRef.id,
-          messageId,
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-          fileUrl: "local://" + file.name, // Mock URL for now
-          ownerId: user.uid,
-          uploadedAt: serverTimestamp(),
-        }, { merge: true });
-      });
-    }
-
     setIsLoading(true);
 
     try {
@@ -128,6 +118,14 @@ export default function Home() {
         timestamp: serverTimestamp(),
       }, { merge: true });
 
+      // Check if response contains code to automatically suggest viewing
+      const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+      const matches = Array.from(response.response.matchAll(codeBlockRegex));
+      if (matches.length > 0) {
+        const [fullMatch, lang, code] = matches[0];
+        setArtifactCode({ code: code.trim(), lang: lang || "plaintext" });
+      }
+
       // Update conversation timestamp
       const convRef = doc(firestore, "users", user.uid, "conversations", convId);
       setDocumentNonBlocking(convRef, { updatedAt: serverTimestamp() }, { merge: true });
@@ -140,6 +138,18 @@ export default function Home() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (artifactCode) {
+      navigator.clipboard.writeText(artifactCode.code);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+      toast({
+        title: "Copié !",
+        description: "Le code a été copié dans le presse-papier.",
+      });
     }
   };
 
@@ -232,6 +242,7 @@ export default function Home() {
                     role={msg.senderType}
                     content={msg.content}
                     timestamp={msg.timestamp?.toDate() || new Date()}
+                    onViewCode={(code, lang) => setArtifactCode({ code, lang })}
                   />
                 ))}
                 {(isLoading || isMessagesLoading) && (
@@ -257,6 +268,61 @@ export default function Home() {
         <div className="w-full max-w-4xl mx-auto pb-6 px-4">
           <ChatInput onSend={handleSendMessage} disabled={isLoading} />
         </div>
+
+        {/* Artifact Code Panel (Right Side) */}
+        <Sheet open={!!artifactCode} onOpenChange={(open) => !open && setArtifactCode(null)}>
+          <SheetContent side="right" className="w-full sm:max-w-[80%] lg:max-w-[60%] p-0 border-l border-border/50 shadow-2xl">
+            <div className="flex flex-col h-full bg-[#0d0d0d] text-white overflow-hidden">
+              <SheetHeader className="p-4 border-b border-white/10 flex flex-row items-center justify-between space-y-0">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
+                    <Terminal className="size-4 text-primary" />
+                  </div>
+                  <div>
+                    <SheetTitle className="text-white text-sm font-bold tracking-tight">Artéfact de Code</SheetTitle>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{artifactCode?.lang || "source"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={copyToClipboard}
+                    className="h-8 text-xs bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg"
+                  >
+                    {isCopied ? <Check className="size-3.5 mr-2 text-green-400" /> : <Copy className="size-3.5 mr-2" />}
+                    {isCopied ? "Copié" : "Copier"}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setArtifactCode(null)}
+                    className="h-8 w-8 text-white/50 hover:text-white"
+                  >
+                    <X className="size-4" />
+                  </Button>
+                </div>
+              </SheetHeader>
+              
+              <ScrollArea className="flex-1 font-mono text-sm leading-relaxed p-6">
+                <pre className="selection:bg-primary/30">
+                  <code className="text-[#d1d1d1] block">
+                    {artifactCode?.code}
+                  </code>
+                </pre>
+              </ScrollArea>
+              
+              <div className="p-4 border-t border-white/10 bg-black/40 flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Prêt à être déployé</span>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="h-7 text-[10px] uppercase font-black tracking-widest bg-transparent border-white/20 hover:bg-white/5 text-white">
+                    Exporter
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
 
         <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       </SidebarInset>
