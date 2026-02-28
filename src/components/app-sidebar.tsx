@@ -28,7 +28,6 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
-  SidebarMenuAction,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
