@@ -1,9 +1,9 @@
 'use server';
 /**
- * @fileOverview This file implements a Genkit flow for free-form conversational AI.
+ * @fileOverview This file implements a Genkit flow for free-form conversational AI with model selection.
  *
  * - chatWithAI - A function that allows users to send messages to the AI and receive intelligent responses.
- * - UserChatMessage - The input type for the chatWithAI function.
+ * - UserChatMessage - The input type for the chatWithAI function, now includes an optional model preference.
  * - AIChatResponse - The return type for the chatWithAI function.
  */
 
@@ -13,6 +13,7 @@ import {z} from 'genkit';
 const UserChatMessageSchema = z
   .object({
     message: z.string().describe('The message from the user to the AI.'),
+    model: z.string().optional().describe('The specific model ID to use for this interaction.'),
   })
   .describe('Input schema for the AI chat flow.');
 export type UserChatMessage = z.infer<typeof UserChatMessageSchema>;
@@ -44,7 +45,10 @@ const chatWithAIFlow = ai.defineFlow(
     outputSchema: AIChatResponseSchema,
   },
   async input => {
-    const {output} = await chatPrompt(input);
+    // Call the prompt with an optional model override from the input
+    const {output} = await chatPrompt(input, {
+      model: input.model as any,
+    });
     return output!;
   }
 );

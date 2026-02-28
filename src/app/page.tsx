@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -30,6 +29,7 @@ import { SettingsDialog } from "@/components/settings-dialog";
 import { 
   useFirebase, 
   useCollection, 
+  useDoc,
   useMemoFirebase,
   setDocumentNonBlocking
 } from "@/firebase";
@@ -57,6 +57,13 @@ export default function Home() {
       initiateAnonymousSignIn(auth);
     }
   }, [user, auth]);
+
+  // Fetch user settings to get LLM preference
+  const settingsRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, "users", user.uid, "settings", "general");
+  }, [firestore, user]);
+  const { data: settings } = useDoc(settingsRef);
 
   // Fetch messages for the current conversation
   const messagesQuery = useMemoFirebase(() => {
@@ -108,7 +115,19 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const response = await chatWithAI({ message: content });
+      // Map user preference to actual model ID
+      const modelPreference = settings?.llmModelPreference || "creative_model";
+      const modelMap: Record<string, string> = {
+        "creative_model": "googleai/gemini-2.5-flash",
+        "fast_model": "googleai/gemini-1.5-flash",
+        "default": "googleai/gemini-1.5-pro"
+      };
+      const modelToUse = modelMap[modelPreference] || "googleai/gemini-2.5-flash";
+
+      const response = await chatWithAI({ 
+        message: content,
+        model: modelToUse 
+      });
       
       if (response && response.response) {
         const aiMessageId = (Date.now() + 1).toString();
@@ -161,6 +180,13 @@ export default function Home() {
     }
   }, [messages, isLoading]);
 
+  const currentModelLabel = React.useMemo(() => {
+    const pref = settings?.llmModelPreference || "creative_model";
+    if (pref === "creative_model") return "Gemini 2.5 Flash";
+    if (pref === "fast_model") return "Gemini 1.5 Flash";
+    return "Gemini 1.5 Pro";
+  }, [settings]);
+
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full bg-background overflow-hidden">
@@ -179,7 +205,7 @@ export default function Home() {
                   <h1 className="text-sm font-bold tracking-tight text-foreground">LibreChat Pro</h1>
                   <Badge variant="secondary" className="text-[10px] font-black tracking-tighter bg-primary/10 text-primary border-none rounded-md px-1.5 py-0 h-4">PLUS</Badge>
                 </div>
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest leading-none mt-0.5">Gemini 2.5 Flash</p>
+                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest leading-none mt-0.5">{currentModelLabel}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -217,7 +243,7 @@ export default function Home() {
                     
                     <h2 className="text-4xl font-black tracking-tighter mb-4 text-balance">Prêt pour votre prochaine grande idée ?</h2>
                     <p className="text-muted-foreground text-sm font-medium mb-12 text-balance leading-relaxed">
-                      Posez une question, analysez des données ou créez du code. Votre assistant IA est prêt à vous accompagner.
+                      Posez une question, analysez des données ou créez du code. Votre assistant IA est prêt à vous accompagner avec {currentModelLabel}.
                     </p>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
