@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -5,9 +6,9 @@ import {
   Trash2, 
   Sparkles, 
   Settings2, 
-  Sidebar as SidebarIcon,
   Search,
-  Zap
+  Zap,
+  Plus
 } from "lucide-react";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatInput } from "@/components/chat-input";
@@ -18,59 +19,128 @@ import { useToast } from "@/hooks/use-toast";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
-
-interface Message {
-  id: string;
-  role: "user" | "ai";
-  content: string;
-  timestamp: Date;
-}
+import { SettingsDialog } from "@/components/settings-dialog";
+import { 
+  useFirebase, 
+  useCollection, 
+  useMemoFirebase,
+  addDocumentNonBlocking,
+  setDocumentNonBlocking
+} from "@/firebase";
+import { collection, query, orderBy, serverTimestamp, doc } from "firebase/firestore";
+import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
 
 export default function Home() {
-  const [messages, setMessages] = React.useState<Message[]>([]);
+  const { auth, firestore, user } = useFirebase();
+  const { toast } = useToast();
+  
+  const [currentConversationId, setCurrentConversationId] = React.useState<string | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
 
-  const handleSendMessage = async (content: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
+  // Auto-login anonymously if not connected
+  React.useEffect(() => {
+    if (!user && auth) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, auth]);
+
+  // Fetch messages for the current conversation
+  const messagesQuery = useMemoFirebase(() => {
+    if (!firestore || !user || !currentConversationId) return null;
+    return query(
+      collection(firestore, "users", user.uid, "conversations", currentConversationId, "messages"),
+      orderBy("timestamp", "asc")
+    );
+  }, [firestore, user, currentConversationId]);
+
+  const { data: messagesData, isLoading: isMessagesLoading } = useCollection(messagesQuery);
+  const messages = messagesData || [];
+
+  const startNewChat = () => {
+    setCurrentConversationId(null);
+  };
+
+  const handleSendMessage = async (content: string, files?: File[]) => {
+    if (!user || !firestore) return;
+
+    let convId = currentConversationId;
+
+    // Create a new conversation if none exists
+    if (!convId) {
+      const newConvRef = doc(collection(firestore, "users", user.uid, "conversations"));
+      convId = newConvRef.id;
+      setDocumentNonBlocking(newConvRef, {
+        id: convId,
+        title: content.substring(0, 30) + (content.length > 30 ? "..." : ""),
+        ownerId: user.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      setCurrentConversationId(convId);
+    }
+
+    const messageId = Date.now().toString();
+    const userMsgRef = doc(firestore, "users", user.uid, "conversations", convId, "messages", messageId);
+    
+    // Save user message
+    setDocumentNonBlocking(userMsgRef, {
+      id: messageId,
+      conversationId: convId,
       content,
-      timestamp: new Date(),
-    };
+      senderType: "user",
+      ownerId: user.uid,
+      timestamp: serverTimestamp(),
+    }, { merge: true });
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Save file metadata if any
+    if (files && files.length > 0) {
+      files.forEach(file => {
+        const fileRef = doc(collection(firestore, "users", user.uid, "conversations", convId!, "messages", messageId, "files"));
+        setDocumentNonBlocking(fileRef, {
+          id: fileRef.id,
+          messageId,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          fileUrl: "local://" + file.name, // Mock URL for now
+          ownerId: user.uid,
+          uploadedAt: serverTimestamp(),
+        }, { merge: true });
+      });
+    }
+
     setIsLoading(true);
 
     try {
       const response = await chatWithAI({ message: content });
       
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "ai",
-        content: response.response,
-        timestamp: new Date(),
-      };
+      const aiMessageId = (Date.now() + 1).toString();
+      const aiMsgRef = doc(firestore, "users", user.uid, "conversations", convId, "messages", aiMessageId);
 
-      setMessages((prev) => [...prev, aiMessage]);
+      setDocumentNonBlocking(aiMsgRef, {
+        id: aiMessageId,
+        conversationId: convId,
+        content: response.response,
+        senderType: "ai",
+        ownerId: user.uid,
+        timestamp: serverTimestamp(),
+      }, { merge: true });
+
+      // Update conversation timestamp
+      const convRef = doc(firestore, "users", user.uid, "conversations", convId);
+      setDocumentNonBlocking(convRef, { updatedAt: serverTimestamp() }, { merge: true });
+
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erreur de connexion",
         description: "L'assistant n'a pas pu répondre. Vérifiez votre connexion.",
       });
-      console.error(error);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const clearChat = () => {
-    setMessages([]);
-    toast({
-      description: "Discussion réinitialisée avec succès.",
-    });
   };
 
   React.useEffect(() => {
@@ -81,9 +151,12 @@ export default function Home() {
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar 
+        currentConversationId={currentConversationId} 
+        onSelectConversation={setCurrentConversationId} 
+        onNewChat={startNewChat}
+      />
       <SidebarInset className="bg-background flex flex-col h-screen overflow-hidden">
-        {/* Modern Header */}
         <header className="glass-effect flex items-center justify-between px-6 py-3 z-20 sticky top-0">
           <div className="flex items-center gap-4">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
@@ -97,38 +170,29 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center relative mr-2">
-              <Search className="absolute left-3 size-3 text-muted-foreground" />
-              <Input 
-                placeholder="Rechercher..." 
-                className="h-8 w-48 pl-8 text-xs bg-accent/50 border-none rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20"
-              />
-            </div>
             <Button
               variant="ghost"
               size="icon"
               className="rounded-lg h-9 w-9 text-muted-foreground"
-              onClick={() => toast({ description: "Paramètres bientôt disponibles." })}
+              onClick={() => setIsSettingsOpen(true)}
             >
               <Settings2 className="size-4" />
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={clearChat}
-              disabled={messages.length === 0}
-              className="rounded-lg h-9 border-border/50 hover:bg-destructive/5 hover:text-destructive hover:border-destructive/20 text-xs font-medium"
+              onClick={startNewChat}
+              className="rounded-lg h-9 border-border/50 text-xs font-medium"
             >
-              <Trash2 className="size-3.5 mr-2" />
-              Effacer
+              <Plus className="size-3.5 mr-2" />
+              Nouveau
             </Button>
           </div>
         </header>
 
-        {/* Chat Canvas */}
         <ScrollArea className="flex-1 bg-background/50">
           <div className="max-w-4xl mx-auto w-full px-4 py-8">
-            {messages.length === 0 ? (
+            {!isMessagesLoading && messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative mb-8">
                   <div className="absolute -inset-4 bg-primary/10 rounded-full blur-2xl animate-pulse" />
@@ -137,12 +201,8 @@ export default function Home() {
                   </div>
                 </div>
                 
-                <h2 className="text-3xl font-bold tracking-tight mb-3">Comment puis-je vous aider aujourd'hui ?</h2>
-                <p className="text-muted-foreground max-w-md mb-10 text-lg leading-relaxed font-medium opacity-80">
-                  Posez-moi n'importe quelle question technique, créative ou pratique.
-                </p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+                <h2 className="text-3xl font-bold tracking-tight mb-3">Comment puis-je vous aider ?</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mt-10">
                   {[
                     { title: "Générer du code", desc: "Crée une interface React avec Tailwind", icon: "💻" },
                     { title: "Analyser un texte", desc: "Résume ce rapport de 500 mots", icon: "📄" },
@@ -152,29 +212,29 @@ export default function Home() {
                     <Button
                       key={s.title}
                       variant="outline"
-                      className="group flex flex-col items-start h-auto p-4 rounded-2xl border-border/60 hover:border-primary/50 hover:bg-primary/5 transition-all text-left shadow-sm hover:shadow-md"
+                      className="group flex flex-col items-start h-auto p-4 rounded-2xl border-border/60 hover:border-primary/50 hover:bg-primary/5 transition-all text-left"
                       onClick={() => handleSendMessage(s.desc)}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xl">{s.icon}</span>
                         <span className="font-bold text-sm">{s.title}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors line-clamp-1">{s.desc}</span>
+                      <span className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors">{s.desc}</span>
                     </Button>
                   ))}
                 </div>
               </div>
             ) : (
               <div className="space-y-2">
-                {messages.map((msg) => (
+                {messages.map((msg: any) => (
                   <ChatMessage
                     key={msg.id}
-                    role={msg.role}
+                    role={msg.senderType}
                     content={msg.content}
-                    timestamp={msg.timestamp}
+                    timestamp={msg.timestamp?.toDate() || new Date()}
                   />
                 ))}
-                {isLoading && (
+                {(isLoading || isMessagesLoading) && (
                   <div className="flex w-full gap-4 mb-8 animate-in fade-in duration-300">
                     <div className="h-8 w-8 rounded-full bg-accent animate-pulse shrink-0 border border-border/50" />
                     <div className="flex flex-col items-start w-full gap-2">
@@ -194,17 +254,11 @@ export default function Home() {
           </div>
         </ScrollArea>
 
-        {/* Input Bar */}
         <div className="w-full max-w-4xl mx-auto pb-6 px-4">
-          <div className="relative">
-            <ChatInput onSend={handleSendMessage} disabled={isLoading} />
-            <div className="mt-3 flex justify-center items-center gap-4 text-[10px] text-muted-foreground font-medium uppercase tracking-widest opacity-60">
-              <span className="flex items-center gap-1"><Zap className="size-2.5" /> IA Propulsée</span>
-              <span className="h-1 w-1 bg-border rounded-full" />
-              <span>Chiffrement Bout-en-Bout</span>
-            </div>
-          </div>
+          <ChatInput onSend={handleSendMessage} disabled={isLoading} />
         </div>
+
+        <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
       </SidebarInset>
     </SidebarProvider>
   );
