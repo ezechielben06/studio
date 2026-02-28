@@ -1,10 +1,10 @@
 'use server';
 /**
- * @fileOverview This file implements a Genkit flow for free-form conversational AI with model selection.
+ * @fileOverview This file implements a robust Genkit flow for AI chat with detailed error reporting.
  *
- * - chatWithAI - A function that allows users to send messages to the AI and receive intelligent responses.
- * - UserChatMessage - The input type for the chatWithAI function, now includes an optional model preference.
- * - AIChatResponse - The return type for the chatWithAI function.
+ * - chatWithAI - Main function to interact with the LLM.
+ * - UserChatMessage - Input schema (message + optional model).
+ * - AIChatResponse - Output schema.
  */
 
 import {ai} from '@/ai/genkit';
@@ -12,25 +12,39 @@ import {z} from 'genkit';
 
 const UserChatMessageSchema = z
   .object({
-    message: z.string().describe('The message from the user to the AI.'),
-    model: z.string().optional().describe('The specific model ID to use for this interaction.'),
+    message: z.string().describe('Le message de l\'utilisateur.'),
+    model: z.string().optional().describe('L\'ID du modèle à utiliser.'),
   })
-  .describe('Input schema for the AI chat flow.');
+  .describe('Schéma d\'entrée pour le chat IA.');
 export type UserChatMessage = z.infer<typeof UserChatMessageSchema>;
 
 const AIChatResponseSchema = z
   .object({
-    response: z.string().describe('The AI\'s intelligent response to the user\'s message.'),
+    response: z.string().describe('La réponse de l\'IA.'),
   })
-  .describe('Output schema for the AI chat flow.');
+  .describe('Schéma de sortie pour le chat IA.');
 export type AIChatResponse = z.infer<typeof AIChatResponseSchema>;
 
+/**
+ * Appelle le flux de chat IA avec une gestion d'erreur robuste.
+ */
 export async function chatWithAI(input: UserChatMessage): Promise<AIChatResponse> {
   try {
     return await chatWithAIFlow(input);
   } catch (error: any) {
-    console.error('Genkit Flow Error:', error);
-    throw new Error(error.message || 'Une erreur de connexion est survenue avec l\'IA.');
+    // Extraction d'un message d'erreur lisible pour l'utilisateur final
+    let userFriendlyMessage = "Une erreur est survenue lors de la communication avec l'IA.";
+    
+    if (error.message?.includes('API_KEY_INVALID')) {
+      userFriendlyMessage = "La clé API Google AI est invalide. Vérifiez vos paramètres Netlify.";
+    } else if (error.message?.includes('quota')) {
+      userFriendlyMessage = "Le quota gratuit de l'API est épuisé. Réessayez dans quelques minutes.";
+    } else if (error.message?.includes('missing')) {
+      userFriendlyMessage = error.message;
+    }
+
+    console.error('Erreur Libre Chat Flow:', error);
+    throw new Error(userFriendlyMessage);
   }
 }
 
@@ -38,9 +52,10 @@ const chatPrompt = ai.definePrompt({
   name: 'chatPrompt',
   input: {schema: UserChatMessageSchema},
   output: {schema: AIChatResponseSchema},
-  prompt: `You are a helpful, respectful, and honest AI assistant. You will engage in a free-form conversation with the user, providing coherent and intelligent responses. Your goal is to be a pleasant and informative conversational partner.
+  prompt: `Tu es Libre Chat, un assistant IA intelligent, précis et chaleureux. 
+Engage une conversation naturelle et aide l'utilisateur de manière constructive.
 
-User: {{{message}}}`,
+Utilisateur: {{{message}}}`,
 });
 
 const chatWithAIFlow = ai.defineFlow(
@@ -50,17 +65,22 @@ const chatWithAIFlow = ai.defineFlow(
     outputSchema: AIChatResponseSchema,
   },
   async input => {
-    // Vérifier si la clé API est présente (côté serveur uniquement)
-    if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
-      throw new Error('La clé API Google AI est manquante dans les variables d\'environnement.');
+    // Vérification de sécurité pour les variables d'environnement
+    const hasApiKey = !!(process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY);
+    
+    if (!hasApiKey) {
+      throw new Error("Configuration incomplète : La variable d'environnement GOOGLE_GENAI_API_KEY est manquante sur Netlify.");
     }
 
+    // Utilisation du modèle demandé ou fallback sur gemini-2.0-flash pour la rapidité
+    const selectedModel = input.model || 'googleai/gemini-2.0-flash';
+
     const {output} = await chatPrompt(input, {
-      model: input.model as any,
+      model: selectedModel as any,
     });
     
-    if (!output) {
-      throw new Error('L\'IA n\'a pas généré de réponse.');
+    if (!output || !output.response) {
+      throw new Error("L'IA n'a pas pu générer de texte. Essayez de reformuler votre message.");
     }
     
     return output;

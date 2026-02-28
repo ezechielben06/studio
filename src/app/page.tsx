@@ -7,7 +7,8 @@ import {
   Plus,
   Code,
   Search,
-  MessageSquare
+  MessageSquare,
+  AlertCircle
 } from "lucide-react";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatInput } from "@/components/chat-input";
@@ -97,11 +98,11 @@ export default function Home() {
     try {
       const modelPreference = settings?.llmModelPreference || "creative_model";
       const modelMap: Record<string, string> = {
-        "creative_model": "googleai/gemini-2.5-flash",
+        "creative_model": "googleai/gemini-2.0-flash",
         "fast_model": "googleai/gemini-1.5-flash",
         "default": "googleai/gemini-1.5-pro"
       };
-      const modelToUse = modelMap[modelPreference] || "googleai/gemini-2.5-flash";
+      const modelToUse = modelMap[modelPreference] || "googleai/gemini-2.0-flash";
 
       const response = await chatWithAI({ message: content, model: modelToUse });
       
@@ -124,8 +125,8 @@ export default function Home() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Erreur de communication",
-        description: error.message || "Impossible de joindre l'IA. Vérifiez vos variables d'environnement sur Netlify.",
+        title: "Connexion IA échouée",
+        description: error.message || "Une erreur inconnue est survenue.",
       });
     } finally {
       setIsLoading(false);
