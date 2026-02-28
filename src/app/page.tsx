@@ -169,7 +169,7 @@ export default function Home() {
           onSelectConversation={setCurrentConversationId} 
           onNewChat={startNewChat}
         />
-        <SidebarInset className="flex flex-col h-svh overflow-hidden relative transition-[margin] duration-300 ease-in-out">
+        <SidebarInset className="flex flex-col h-svh overflow-hidden relative transition-all duration-300 ease-in-out">
           <header className="glass-effect flex items-center justify-between px-6 py-4 z-30 sticky top-0 shrink-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors h-10 w-10 rounded-xl hover:bg-accent" />

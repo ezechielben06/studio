@@ -131,7 +131,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
   }, [filteredConversations]);
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/40 bg-sidebar/50 backdrop-blur-xl transition-all duration-300">
+    <Sidebar collapsible="icon" className="border-r border-border/40 bg-sidebar/50 backdrop-blur-xl transition-all duration-300 ease-in-out">
       <SidebarHeader className="p-4 gap-4 overflow-hidden">
         <div className="flex items-center gap-3 px-2">
           <div className="size-8 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
