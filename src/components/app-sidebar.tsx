@@ -13,7 +13,8 @@ import {
   MoreHorizontal,
   Trash2,
   Share2,
-  Edit3
+  Edit3,
+  Archive
 } from "lucide-react";
 import {
   Sidebar,
@@ -92,6 +93,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
+    navigator.clipboard.writeText(window.location.href);
     toast({
       title: "Lien de partage copié",
       description: "Le lien vers cette conversation est prêt à être envoyé.",
@@ -185,7 +187,7 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                         tooltip={conv.title} 
                         isActive={currentConversationId === conv.id}
                         className={cn(
-                          "rounded-xl transition-all duration-200 h-10 px-3 group/item relative",
+                          "rounded-xl transition-all duration-200 h-10 px-3 group/item relative pr-8",
                           currentConversationId === conv.id 
                             ? "bg-accent/80 text-foreground font-semibold" 
                             : "hover:bg-accent/40 text-muted-foreground hover:text-foreground"
@@ -199,31 +201,37 @@ export function AppSidebar({ currentConversationId, onSelectConversation, onNewC
                         <span className="truncate text-[13px] leading-none">{conv.title}</span>
                       </SidebarMenuButton>
                       
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction className="opacity-0 group-hover/item:opacity-100 transition-opacity bg-transparent hover:bg-accent/60">
-                            <MoreHorizontal className="size-3.5" />
-                          </SidebarMenuAction>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-48 rounded-xl p-1.5 shadow-xl border-border/40 backdrop-blur-xl bg-background/95">
-                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={handleShare}>
-                            <Share2 className="size-3.5 opacity-60" />
-                            <span className="text-xs font-semibold">Partager</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer">
-                            <Edit3 className="size-3.5 opacity-60" />
-                            <span className="text-xs font-semibold">Renommer</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="opacity-50" />
-                          <DropdownMenuItem 
-                            className="gap-2 rounded-lg cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5"
-                            onClick={(e) => handleDeleteConversation(e, conv.id)}
-                          >
-                            <Trash2 className="size-3.5" />
-                            <span className="text-xs font-semibold">Supprimer</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center opacity-0 group-hover/item:opacity-100 transition-opacity">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-accent/60">
+                              <MoreHorizontal className="size-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl p-1.5 shadow-xl border-border/40 backdrop-blur-xl bg-background/95">
+                            <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer" onClick={handleShare}>
+                              <Share2 className="size-3.5 opacity-60" />
+                              <span className="text-xs font-semibold">Partager</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer">
+                              <Edit3 className="size-3.5 opacity-60" />
+                              <span className="text-xs font-semibold">Renommer</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2 rounded-lg cursor-pointer">
+                              <Archive className="size-3.5 opacity-60" />
+                              <span className="text-xs font-semibold">Archiver</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="opacity-50" />
+                            <DropdownMenuItem 
+                              className="gap-2 rounded-lg cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5"
+                              onClick={(e) => handleDeleteConversation(e, conv.id)}
+                            >
+                              <Trash2 className="size-3.5" />
+                              <span className="text-xs font-semibold">Supprimer</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
