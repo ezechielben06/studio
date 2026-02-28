@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -77,13 +78,27 @@
 }
 
 .chat-bubble-user {
-  @apply bg-primary text-primary-foreground rounded-2xl rounded-tr-none px-4 py-2.5 shadow-sm;
+  @apply bg-primary text-primary-foreground rounded-3xl rounded-tr-none px-6 py-4 shadow-md shadow-primary/10;
 }
 
 .chat-bubble-ai {
-  @apply bg-card text-card-foreground border border-border rounded-2xl rounded-tl-none px-4 py-2.5 shadow-sm;
+  @apply bg-card text-card-foreground border border-border/40 rounded-3xl rounded-tl-none px-6 py-5 shadow-sm;
 }
 
 .glass-effect {
   @apply bg-background/60 backdrop-blur-xl border-b border-border/50;
 }
+
+.prose-ai {
+  @apply text-sm leading-relaxed;
+}
+
+.prose-ai h1 { @apply text-2xl font-bold mb-4 mt-2; }
+.prose-ai h2 { @apply text-xl font-bold mb-3 mt-4; }
+.prose-ai h3 { @apply text-lg font-bold mb-2 mt-3; }
+.prose-ai p { @apply mb-4 last:mb-0; }
+.prose-ai ul { @apply list-disc pl-5 mb-4 space-y-2; }
+.prose-ai ol { @apply list-decimal pl-5 mb-4 space-y-2; }
+.prose-ai li { @apply mb-1; }
+.prose-ai strong { @apply font-bold text-foreground; }
+.prose-ai blockquote { @apply border-l-4 border-primary/30 pl-4 italic my-4 text-muted-foreground; }
