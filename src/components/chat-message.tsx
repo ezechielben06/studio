@@ -1,4 +1,3 @@
-
 "use client";
 
 import { cn } from "@/lib/utils";
@@ -85,7 +84,7 @@ export function ChatMessage({ role, content, timestamp, onViewCode }: ChatMessag
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  // Change p to div to avoid "div in p" hydration errors when rendering code blocks
+                  // IMPORTANT: Render p as div to prevent hydration errors when containing code divs
                   p({ children }) {
                     return <div className="mb-4 last:mb-0">{children}</div>;
                   },
