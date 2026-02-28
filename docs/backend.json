@@ -1,0 +1,254 @@
+{
+  "entities": {
+    "Conversation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Conversation",
+      "type": "object",
+      "description": "Represents a single chat session or interaction history between a user and the AI.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Conversation entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "A descriptive title for the conversation, possibly auto-generated or user-provided."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the conversation was initiated.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating the last time a message was added or the conversation was modified.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents an individual message exchanged within a conversation, either from the user or the AI.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Message entity."
+        },
+        "conversationId": {
+          "type": "string",
+          "description": "Reference to the Conversation this message belongs to. (Relationship: Conversation 1:N Message)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The textual content of the message."
+        },
+        "senderType": {
+          "type": "string",
+          "description": "Indicates who sent the message, e.g., 'user' or 'ai'."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp indicating when the message was sent or received.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "conversationId",
+        "content",
+        "senderType",
+        "timestamp"
+      ]
+    },
+    "File": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "File",
+      "type": "object",
+      "description": "Represents metadata for a file uploaded by the user, potentially associated with a message.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the File entity."
+        },
+        "messageId": {
+          "type": "string",
+          "description": "Reference to the Message this file is attached to. (Relationship: Message 1:N File)"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "The original name of the uploaded file."
+        },
+        "fileType": {
+          "type": "string",
+          "description": "The MIME type of the file, e.g., 'image/png', 'application/pdf'."
+        },
+        "fileSize": {
+          "type": "number",
+          "description": "The size of the file in bytes."
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "The URL or path where the file is stored (e.g., in object storage).",
+          "format": "uri"
+        },
+        "uploadedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the file was uploaded.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "messageId",
+        "fileName",
+        "fileType",
+        "fileSize",
+        "fileUrl",
+        "uploadedAt"
+      ]
+    },
+    "UserSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserSettings",
+      "type": "object",
+      "description": "Stores user-specific preferences and configuration settings for the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserSettings entity. (Assuming a single settings object per local app instance or implicit user)."
+        },
+        "theme": {
+          "type": "string",
+          "description": "The preferred visual theme for the application (e.g., 'light', 'dark')."
+        },
+        "llmModelPreference": {
+          "type": "string",
+          "description": "The user's preferred LLM model to interact with (e.g., 'default', 'fast_model', 'creative_model')."
+        },
+        "autoSaveChatHistory": {
+          "type": "boolean",
+          "description": "Boolean indicating whether chat history should be automatically saved."
+        },
+        "lastUpdatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user settings were last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "theme",
+        "llmModelPreference",
+        "autoSaveChatHistory",
+        "lastUpdatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/settings",
+        "definition": {
+          "entityName": "UserSettings",
+          "schema": {
+            "$ref": "#/backend/entities/UserSettings"
+          },
+          "description": "Stores user-specific preferences and configuration settings. This is a singleton document per user, implicitly owned by the 'userId' in the path, therefore does not require an explicit 'ownerId' field for authorization.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns these settings."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/conversations/{conversationId}",
+        "definition": {
+          "entityName": "Conversation",
+          "schema": {
+            "$ref": "#/backend/entities/Conversation"
+          },
+          "description": "Represents a single chat session between a user and the AI. Documents in this collection include a denormalized 'ownerId' field (matching 'userId' from the path) for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this conversation."
+            },
+            {
+              "name": "conversationId",
+              "description": "The unique identifier for the specific conversation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/conversations/{conversationId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Represents an individual message within a conversation. Documents in this collection include denormalized 'ownerId' (matching 'userId' from the path) and 'conversationId' fields for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the parent conversation and this message."
+            },
+            {
+              "name": "conversationId",
+              "description": "The unique identifier of the parent conversation."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the specific message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/conversations/{conversationId}/messages/{messageId}/files/{fileId}",
+        "definition": {
+          "entityName": "File",
+          "schema": {
+            "$ref": "#/backend/entities/File"
+          },
+          "description": "Stores metadata for a file uploaded by the user, attached to a specific message. Documents in this collection include denormalized 'ownerId' (matching 'userId' from the path), 'conversationId', and 'messageId' fields for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the parent conversation, message, and this file."
+            },
+            {
+              "name": "conversationId",
+              "description": "The unique identifier of the parent conversation."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier of the parent message."
+            },
+            {
+              "name": "fileId",
+              "description": "The unique identifier for the specific file."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed following the CORE DESIGN PRINCIPLES and DESIGN STRATEGY MANDATES to ensure a secure, scalable, and debuggable system for Libre Chat. The primary strategy employed is **Path-Based Ownership** combined with **Denormalization of Authorization Context**.\n\n**Authorization Independence:** All user-specific data (Conversations, Messages, Files, User Settings) is nested directly under a `/users/{userId}` path. This establishes a clear and immediate ownership context, eliminating the need for complex `get()` calls in security rules to ascertain the owner of a document or its parent. For `Conversation`, `Message`, and `File` entities, the `ownerId` field, which corresponds to the `userId` from the path, is denormalized and stored directly within each document. This means that any document can be authorized by simply checking `request.auth.uid == resource.data.ownerId`, making rules atomic, robust, and easy to debug. The `UserSettings` collection, being a singleton subcollection directly under `/users/{userId}/settings`, relies purely on the path for authorization (`request.auth.uid == userId`) as its ownership is unambiguous.\n\n**QAPs (Queries as Authorization Policies):**\n1.  **Structural Segregation:** All documents within a given user's path share the same security posture (private to that user). There are no mixed public/private data within these collections. This simplifies `list` operations, as a query for `/users/{userId}/conversations` inherently only returns conversations belonging to the authenticated `userId`.\n2.  **Explicit Ownership:** By embedding `ownerId` in `Conversation`, `Message`, and `File` documents, and leveraging the path for `UserSettings`, all `list` operations automatically enforce ownership. Rules can simply `allow list: if request.auth.uid == userId;` at the collection level, and the system ensures that `userId` in the path matches `request.auth.uid`. If a query attempts to list data for a `userId` that does not match `request.auth.uid`, the request will be denied before any data is returned, upholding the QAPs principle.\n\n**Hierarchical Paths:** The structure leverages nested subcollections (`/users/{userId}/conversations/{conversationId}/messages/{messageId}/files/{fileId}`) to logically group related data and reinforce ownership from the root (`users`) down to the leaf (`files`). This provides an intuitive and efficient way to manage relationships and enforce granular, yet simple, security rules."
+  }
+}

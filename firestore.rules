@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * Libre Chat Security Rules
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset enforces a strict Path-Based Ownership model. All data is organized 
+     * hierarchically under a user-specific root (/users/{userId}), ensuring that users 
+     * can only access their own data.
+     *
+     * DATA STRUCTURE:
+     * - /users/{userId}/settings: Singleton configuration for the user.
+     * - /users/{userId}/conversations/{conversationId}: Chat sessions owned by the user.
+     * - /users/{userId}/conversations/.../messages/{messageId}: Individual messages.
+     * - /users/{userId}/conversations/.../messages/.../files/{fileId}: Metadata for uploaded files.
+     *
+     * KEY SECURITY DECISIONS:
+     * - Denormalization: The 'ownerId' field is required on all core entities (Conversation, 
+     *   Message, File) to allow for atomic, independent authorization checks.
+     * - Relational Integrity: The rules enforce that the 'ownerId' field in the data 
+     *   matches the {userId} in the document path during creation and remains immutable.
+     * - Privacy: No data is publicly readable; all read and write operations require 
+     *   authentication and ownership verification.
+     *
+     * PROTOTYPING MODE:
+     * Rules focus on robust authorization and relational links but allow flexibility 
+     * for general data shapes (e.g., message content or theme names) to support rapid iteration.
+     */
+
+    // --- Helper Functions ---
+
+    /** Checks if the request is from an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Checks if the authenticated user matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** Verifies ownership for operations on existing documents. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /** Validates that the ownerId in the document matches the owner in the path. */
+    function isValidOwnership(userId) {
+      return request.resource.data.ownerId == userId;
+    }
+
+    /** Ensures the ownerId field cannot be changed after creation. */
+    function isOwnerImmutable() {
+      return request.resource.data.ownerId == resource.data.ownerId;
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for user settings, which store theme and LLM preferences.
+     * @path /users/{userId}/settings/{settingId}
+     * @allow (get) If the user matches the {userId} in the path.
+     * @deny (list) If a user tries to view settings belonging to a different UID.
+     * @principle Restricts access to a user's own data tree via path-based ownership.
+     */
+    match /users/{userId}/settings/{settingId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for chat conversations. Includes ownership validation in data.
+     * @path /users/{userId}/conversations/{conversationId}
+     * @allow (create) If auth.uid matches {userId} and data.ownerId matches {userId}.
+     * @deny (update) If the request attempts to change the ownerId of the conversation.
+     * @principle Enforces relational integrity between path and denormalized ownership fields.
+     */
+    match /users/{userId}/conversations/{conversationId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidOwnership(userId);
+      allow update: if isExistingOwner(userId) && isOwnerImmutable();
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for messages within a specific conversation.
+       * @path /users/{userId}/conversations/{conversationId}/messages/{messageId}
+       * @allow (list) If the authenticated user is the owner of the parent conversation path.
+       * @deny (create) If the message's ownerId doesn't match the authenticated user.
+       * @principle Hierarchical path-based security combined with explicit ownership fields.
+       */
+      match /messages/{messageId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidOwnership(userId);
+        allow update: if isExistingOwner(userId) && isOwnerImmutable();
+        allow delete: if isExistingOwner(userId);
+
+        /**
+         * @description Rules for file metadata attached to messages.
+         * @path /users/{userId}/conversations/{conversationId}/messages/{messageId}/files/{fileId}
+         * @allow (create) When a user uploads a file and sets metadata with their UID.
+         * @deny (get) If a user attempts to access file metadata in another user's conversation.
+         * @principle Deeply nested ownership verification.
+         */
+        match /files/{fileId} {
+          allow get, list: if isOwner(userId);
+          allow create: if isOwner(userId) && isValidOwnership(userId);
+          allow update: if isExistingOwner(userId) && isOwnerImmutable();
+          allow delete: if isExistingOwner(userId);
+        }
+      }
+    }
+
+    // Explicitly deny any access to documents not covered by the paths above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
