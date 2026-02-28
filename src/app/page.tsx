@@ -11,7 +11,9 @@ import {
   X,
   Copy,
   Check,
-  Terminal
+  Terminal,
+  ArrowRight,
+  Code
 } from "lucide-react";
 import { ChatMessage } from "@/components/chat-message";
 import { ChatInput } from "@/components/chat-input";
@@ -31,6 +33,7 @@ import {
 import { collection, query, orderBy, serverTimestamp, doc } from "firebase/firestore";
 import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   const { auth, firestore, user } = useFirebase();
@@ -78,7 +81,7 @@ export default function Home() {
       convId = newConvRef.id;
       setDocumentNonBlocking(newConvRef, {
         id: convId,
-        title: content.substring(0, 30) + (content.length > 30 ? "..." : ""),
+        title: content.substring(0, 40) + (content.length > 40 ? "..." : ""),
         ownerId: user.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -89,7 +92,6 @@ export default function Home() {
     const messageId = Date.now().toString();
     const userMsgRef = doc(firestore, "users", user.uid, "conversations", convId, "messages", messageId);
     
-    // Save user message
     setDocumentNonBlocking(userMsgRef, {
       id: messageId,
       conversationId: convId,
@@ -117,7 +119,7 @@ export default function Home() {
           timestamp: serverTimestamp(),
         }, { merge: true });
 
-        // Check if response contains code to automatically suggest viewing
+        // Auto-detect code for artifacts
         const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
         const matches = Array.from(response.response.matchAll(codeBlockRegex));
         if (matches.length > 0) {
@@ -125,7 +127,6 @@ export default function Home() {
           setArtifactCode({ code: code.trim(), lang: lang || "plaintext" });
         }
 
-        // Update conversation timestamp
         const convRef = doc(firestore, "users", user.uid, "conversations", convId);
         setDocumentNonBlocking(convRef, { updatedAt: serverTimestamp() }, { merge: true });
       }
@@ -134,7 +135,7 @@ export default function Home() {
       toast({
         variant: "destructive",
         title: "Erreur de connexion",
-        description: "L'assistant n'a pas pu répondre. Vérifiez votre connexion.",
+        description: "L'assistant n'a pas pu répondre. Veuillez réessayer.",
       });
     } finally {
       setIsLoading(false);
@@ -146,10 +147,7 @@ export default function Home() {
       navigator.clipboard.writeText(artifactCode.code);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
-      toast({
-        title: "Copié !",
-        description: "Le code a été copié dans le presse-papier.",
-      });
+      toast({ title: "Code copié !" });
     }
   };
 
@@ -166,121 +164,137 @@ export default function Home() {
         onSelectConversation={setCurrentConversationId} 
         onNewChat={startNewChat}
       />
-      <SidebarInset className="bg-background flex flex-col h-screen overflow-hidden">
-        <header className="glass-effect flex items-center justify-between px-6 py-3 z-20 sticky top-0">
+      <SidebarInset className="bg-background flex flex-col h-svh overflow-hidden relative">
+        <header className="glass-effect flex items-center justify-between px-6 py-4 z-30 sticky top-0 shrink-0">
           <div className="flex items-center gap-4">
-            <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
-            <div className="h-4 w-px bg-border/50 hidden sm:block" />
+            <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors h-10 w-10 rounded-xl hover:bg-accent" />
+            <div className="h-4 w-px bg-border/60 hidden sm:block" />
             <div className="flex flex-col">
-              <h1 className="text-sm font-semibold tracking-tight text-foreground flex items-center gap-2">
-                LibreChat Pro
-                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full uppercase font-bold tracking-widest">v2.0</span>
-              </h1>
-              <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Modèle Gemini Flash 2.5</p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-sm font-bold tracking-tight text-foreground">LibreChat Pro</h1>
+                <Badge variant="secondary" className="text-[10px] font-black tracking-tighter bg-primary/10 text-primary border-none rounded-md px-1.5 py-0 h-4">PLUS</Badge>
+              </div>
+              <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest leading-none mt-0.5">Gemini 2.5 Flash</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-lg h-9 w-9 text-muted-foreground"
+              className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-all"
               onClick={() => setIsSettingsOpen(true)}
             >
               <Settings2 className="size-4" />
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={startNewChat}
-              className="rounded-lg h-9 border-border/50 text-xs font-medium"
+              className="rounded-xl h-10 bg-primary shadow-lg shadow-primary/20 text-xs font-bold px-4"
             >
               <Plus className="size-3.5 mr-2" />
-              Nouveau
+              Nouveau Chat
             </Button>
           </div>
         </header>
 
-        <ScrollArea className="flex-1 bg-background/50">
-          <div className="max-w-4xl mx-auto w-full px-4 py-8">
-            {!isMessagesLoading && messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in zoom-in-95 duration-700">
-                <div className="relative mb-8">
-                  <div className="absolute -inset-4 bg-primary/10 rounded-full blur-2xl animate-pulse" />
-                  <div className="relative bg-gradient-to-tr from-primary to-accent size-16 rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/20 rotate-3">
-                    <Zap className="size-8 text-white fill-white" />
+        <div className="flex-1 overflow-hidden flex flex-col relative">
+          <ScrollArea className="flex-1">
+            <div className="max-w-4xl mx-auto w-full px-6 py-10">
+              {!isMessagesLoading && messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-2xl mx-auto animate-in fade-in zoom-in-95 duration-700">
+                  <div className="relative mb-10">
+                    <div className="absolute -inset-10 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+                    <div className="relative bg-gradient-to-br from-primary to-accent size-20 rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/30 rotate-6 group transition-transform hover:rotate-0">
+                      <Sparkles className="size-10 text-white fill-white animate-pulse" />
+                    </div>
+                  </div>
+                  
+                  <h2 className="text-4xl font-black tracking-tighter mb-4 text-balance">Prêt pour votre prochaine grande idée ?</h2>
+                  <p className="text-muted-foreground text-sm font-medium mb-12 text-balance leading-relaxed">
+                    Posez une question, analysez des données ou créez du code. Votre assistant IA est prêt à vous accompagner.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                    {[
+                      { title: "Développement", desc: "Crée une application météo en Next.js", icon: <Code className="size-5" /> },
+                      { title: "Analyse", desc: "Explique les tendances du marché IA en 2024", icon: <Search className="size-5" /> },
+                      { title: "Productivité", desc: "Rédige un mail pro pour un nouveau client", icon: <Zap className="size-5" /> },
+                      { title: "Planification", desc: "Crée un itinéraire de 3 jours à Tokyo", icon: <ArrowRight className="size-5" /> }
+                    ].map((s) => (
+                      <Button
+                        key={s.title}
+                        variant="outline"
+                        className="group flex flex-col items-start h-auto p-5 rounded-2xl border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-all text-left bg-card/50"
+                        onClick={() => handleSendMessage(s.desc)}
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="size-9 rounded-xl bg-accent flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                            {s.icon}
+                          </div>
+                          <span className="font-bold text-sm">{s.title}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground font-medium group-hover:text-foreground/80 transition-colors">{s.desc}</span>
+                      </Button>
+                    ))}
                   </div>
                 </div>
-                
-                <h2 className="text-3xl font-bold tracking-tight mb-3">Comment puis-je vous aider ?</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mt-10">
-                  {[
-                    { title: "Générer du code", desc: "Crée une interface React avec Tailwind", icon: "💻" },
-                    { title: "Analyser un texte", desc: "Résume ce rapport de 500 mots", icon: "📄" },
-                    { title: "Planifier", desc: "Une routine sportive de 30 min", icon: "⏱️" },
-                    { title: "Explorer", desc: "Explique la physique quantique", icon: "🧠" }
-                  ].map((s) => (
-                    <Button
-                      key={s.title}
-                      variant="outline"
-                      className="group flex flex-col items-start h-auto p-4 rounded-2xl border-border/60 hover:border-primary/50 hover:bg-primary/5 transition-all text-left"
-                      onClick={() => handleSendMessage(s.desc)}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl">{s.icon}</span>
-                        <span className="font-bold text-sm">{s.title}</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors">{s.desc}</span>
-                    </Button>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((msg: any) => (
+                    <ChatMessage
+                      key={msg.id}
+                      role={msg.senderType}
+                      content={msg.content || ""}
+                      timestamp={msg.timestamp?.toDate() || new Date()}
+                      onViewCode={(code, lang) => setArtifactCode({ code, lang })}
+                    />
                   ))}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {messages.map((msg: any) => (
-                  <ChatMessage
-                    key={msg.id}
-                    role={msg.senderType}
-                    content={msg.content || ""}
-                    timestamp={msg.timestamp?.toDate() || new Date()}
-                    onViewCode={(code, lang) => setArtifactCode({ code, lang })}
-                  />
-                ))}
-                {(isLoading || isMessagesLoading) && (
-                  <div className="flex w-full gap-4 mb-8 animate-in fade-in duration-300">
-                    <div className="h-8 w-8 rounded-full bg-accent animate-pulse shrink-0 border border-border/50" />
-                    <div className="flex flex-col items-start w-full gap-2">
-                      <div className="bg-card border border-border rounded-2xl rounded-tl-none px-5 py-3 shadow-sm min-w-[80px]">
-                        <div className="flex gap-1.5 h-4 items-center">
-                          <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                          <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+                  {(isLoading || isMessagesLoading) && (
+                    <div className="flex w-full gap-4 mb-8 animate-in fade-in duration-300">
+                      <div className="h-9 w-9 rounded-xl bg-accent/50 animate-pulse shrink-0 border border-border/50" />
+                      <div className="flex flex-col items-start w-full gap-2">
+                        <div className="bg-card border border-border/60 rounded-2xl rounded-tl-none px-6 py-4 shadow-sm min-w-[100px]">
+                          <div className="flex gap-2 items-center h-4">
+                            <div className="w-2 h-2 bg-primary/30 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                            <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                <div ref={scrollRef} className="h-4" />
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+                  )}
+                  <div ref={scrollRef} className="h-20" />
+                </div>
+              )}
+            </div>
+          </ScrollArea>
 
-        <div className="w-full max-w-4xl mx-auto pb-6 px-4">
-          <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+          <div className="absolute bottom-0 left-0 right-0 p-6 z-20 pointer-events-none">
+            <div className="max-w-4xl mx-auto w-full pointer-events-auto">
+              <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+              <p className="text-[10px] text-center text-muted-foreground/50 font-bold mt-4 uppercase tracking-[0.2em]">LibreChat Pro peut faire des erreurs. Vérifiez les informations importantes.</p>
+            </div>
+          </div>
         </div>
 
-        {/* Artifact Code Panel (Right Side) */}
+        {/* Code Artifact Panel */}
         <Sheet open={!!artifactCode} onOpenChange={(open) => !open && setArtifactCode(null)}>
-          <SheetContent side="right" className="w-full sm:max-w-[80%] lg:max-w-[60%] p-0 border-l border-border/50 shadow-2xl">
-            <div className="flex flex-col h-full bg-[#0d0d0d] text-white overflow-hidden">
-              <SheetHeader className="p-4 border-b border-white/10 flex flex-row items-center justify-between space-y-0">
-                <div className="flex items-center gap-3">
-                  <div className="size-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
-                    <Terminal className="size-4 text-primary" />
+          <SheetContent side="right" className="w-full sm:max-w-[85%] lg:max-w-[65%] p-0 border-l border-border/50 shadow-2xl">
+            <div className="flex flex-col h-full bg-[#080808] text-white overflow-hidden">
+              <SheetHeader className="p-5 border-b border-white/5 flex flex-row items-center justify-between space-y-0 bg-[#0c0c0c]">
+                <div className="flex items-center gap-4">
+                  <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                    <Terminal className="size-5 text-primary" />
                   </div>
                   <div>
-                    <SheetTitle className="text-white text-sm font-bold tracking-tight">Artéfact de Code</SheetTitle>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{artifactCode?.lang || "source"}</p>
+                    <SheetTitle className="text-white text-base font-bold tracking-tight">Artéfact de Code</SheetTitle>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Badge className="text-[9px] bg-white/10 hover:bg-white/20 text-white/70 border-none px-1.5 h-4 uppercase font-bold tracking-widest">
+                        {artifactCode?.lang || "source"}
+                      </Badge>
+                      <span className="text-[10px] text-white/30 font-medium">Lecture seule</span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -288,7 +302,7 @@ export default function Home() {
                     variant="ghost" 
                     size="sm" 
                     onClick={copyToClipboard}
-                    className="h-8 text-xs bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg"
+                    className="h-9 px-4 text-xs bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl transition-all"
                   >
                     {isCopied ? <Check className="size-3.5 mr-2 text-green-400" /> : <Copy className="size-3.5 mr-2" />}
                     {isCopied ? "Copié" : "Copier"}
@@ -297,28 +311,29 @@ export default function Home() {
                     variant="ghost" 
                     size="icon" 
                     onClick={() => setArtifactCode(null)}
-                    className="h-8 w-8 text-white/50 hover:text-white"
+                    className="h-9 w-9 text-white/40 hover:text-white rounded-xl hover:bg-white/5"
                   >
-                    <X className="size-4" />
+                    <X className="size-5" />
                   </Button>
                 </div>
               </SheetHeader>
               
-              <ScrollArea className="flex-1 font-mono text-sm leading-relaxed p-6">
-                <pre className="selection:bg-primary/30">
-                  <code className="text-[#d1d1d1] block whitespace-pre">
+              <ScrollArea className="flex-1 font-mono text-sm leading-relaxed p-8 bg-black/40">
+                <pre className="selection:bg-primary/40 selection:text-white">
+                  <code className="text-[#e0e0e0] block whitespace-pre">
                     {artifactCode?.code}
                   </code>
                 </pre>
               </ScrollArea>
               
-              <div className="p-4 border-t border-white/10 bg-black/40 flex items-center justify-between">
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Prêt à être déployé</span>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="h-7 text-[10px] uppercase font-black tracking-widest bg-transparent border-white/20 hover:bg-white/5 text-white">
-                    Exporter
-                  </Button>
+              <div className="p-4 border-t border-white/5 bg-[#0c0c0c] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="size-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] text-white/40 uppercase font-bold tracking-tighter">Prêt pour déploiement</span>
                 </div>
+                <Button variant="outline" size="sm" className="h-8 text-[10px] uppercase font-black tracking-widest bg-white/5 border-white/10 hover:bg-white/10 text-white rounded-lg">
+                  Télécharger .zip
+                </Button>
               </div>
             </div>
           </SheetContent>
